@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
+<rect width="100%" height="100%" fill="white"/>
+<text x="480.0" y="32.0" font-size="18" text-anchor="middle">Toy planner task completion</text>
+<line x1="92" y1="392" x2="852" y2="392" stroke="#111"/>
+<line x1="92" y1="72" x2="92" y2="392" stroke="#111"/>
+<line x1="87" y1="392.0" x2="92" y2="392.0" stroke="#111"/>
+<text x="80.0" y="396.0" font-size="11" text-anchor="end">0.0</text>
+<line x1="92" y1="392.0" x2="852" y2="392.0" stroke="#eee"/>
+<line x1="87" y1="328.0" x2="92" y2="328.0" stroke="#111"/>
+<text x="80.0" y="332.0" font-size="11" text-anchor="end">0.2</text>
+<line x1="92" y1="328.0" x2="852" y2="328.0" stroke="#eee"/>
+<line x1="87" y1="264.0" x2="92" y2="264.0" stroke="#111"/>
+<text x="80.0" y="268.0" font-size="11" text-anchor="end">0.4</text>
+<line x1="92" y1="264.0" x2="852" y2="264.0" stroke="#eee"/>
+<line x1="87" y1="200.0" x2="92" y2="200.0" stroke="#111"/>
+<text x="80.0" y="204.0" font-size="11" text-anchor="end">0.6</text>
+<line x1="92" y1="200.0" x2="852" y2="200.0" stroke="#eee"/>
+<line x1="87" y1="136.0" x2="92" y2="136.0" stroke="#111"/>
+<text x="80.0" y="140.0" font-size="11" text-anchor="end">0.8</text>
+<line x1="92" y1="136.0" x2="852" y2="136.0" stroke="#eee"/>
+<line x1="87" y1="72.0" x2="92" y2="72.0" stroke="#111"/>
+<text x="80.0" y="76.0" font-size="11" text-anchor="end">1.0</text>
+<line x1="92" y1="72.0" x2="852" y2="72.0" stroke="#eee"/>
+<text x="282.0" y="434.0" font-size="11" text-anchor="middle">direct pick blocked by distractor</text>
+<rect x="214.0" y="321.0" width="34.0" height="71.0" fill="#718096"/>
+<text x="231.0" y="316.0" font-size="10" text-anchor="middle">0.22</text>
+<rect x="256.5" y="159.7" width="34.0" height="232.3" fill="#d69e2e"/>
+<text x="273.5" y="154.7" font-size="10" text-anchor="middle">0.73</text>
+<rect x="299.0" y="159.7" width="34.0" height="232.3" fill="#2b6cb0"/>
+<text x="316.0" y="154.7" font-size="10" text-anchor="middle">0.73</text>
+<rect x="341.5" y="159.7" width="34.0" height="232.3" fill="#2f855a"/>
+<text x="358.5" y="154.7" font-size="10" text-anchor="middle">0.73</text>
+<text x="662.0" y="434.0" font-size="11" text-anchor="middle">far bin high drop risk</text>
+<rect x="594.0" y="284.5" width="34.0" height="107.5" fill="#718096"/>
+<text x="611.0" y="279.5" font-size="10" text-anchor="middle">0.34</text>
+<rect x="636.5" y="284.5" width="34.0" height="107.5" fill="#d69e2e"/>
+<text x="653.5" y="279.5" font-size="10" text-anchor="middle">0.34</text>
+<rect x="679.0" y="159.0" width="34.0" height="233.0" fill="#2b6cb0"/>
+<text x="696.0" y="154.0" font-size="10" text-anchor="middle">0.73</text>
+<rect x="721.5" y="159.0" width="34.0" height="233.0" fill="#2f855a"/>
+<text x="738.5" y="154.0" font-size="10" text-anchor="middle">0.73</text>
+<rect x="602" y="44" width="12" height="12" fill="#718096"/>
+<text x="620.0" y="54.0" font-size="11" text-anchor="start">naive_no_risk</text>
+<rect x="602" y="64" width="12" height="12" fill="#d69e2e"/>
+<text x="620.0" y="74.0" font-size="11" text-anchor="start">per_skill_prior</text>
+<rect x="602" y="84" width="12" height="12" fill="#2b6cb0"/>
+<text x="620.0" y="94.0" font-size="11" text-anchor="start">calibrated_logistic_state_risk</text>
+<rect x="602" y="104" width="12" height="12" fill="#2f855a"/>
+<text x="620.0" y="114.0" font-size="11" text-anchor="start">oracle_true_risk</text>
+<text x="22" y="232.0" font-size="13" text-anchor="middle" transform="rotate(-90 22 232.0)">Task completion rate</text>
+</svg>

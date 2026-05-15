@@ -1,0 +1,11 @@
+experiment_id: toy_risk_learning
+seed: 13
+train_examples: 2500
+calibration_examples: 1000
+test_examples: 1000
+planner_eval_episodes: 500
+risk_threshold: 0.35
+outputs:
+  summary_path: reports/toy_risk_learning_summary.json
+  report_path: reports/toy_risk_learning.md
+  figures_dir: reports/figures

@@ -1,0 +1,18 @@
+experiment_id: toy_oracle_validation
+num_episodes: 500
+seed_start: 0
+scenario_ids:
+  - direct_pick_blocked_by_distractor
+  - far_bin_high_drop_risk
+planner_modes:
+  - naive_no_risk
+  - fixed_per_skill_risk
+  - oracle_risk
+planner:
+  lambda_risk: 3.0
+  next_skill_threshold: 0.85
+  plan_threshold: 0.85
+  max_replans: 8
+outputs:
+  summary_path: outputs/toy_oracle_validation_summary.json
+

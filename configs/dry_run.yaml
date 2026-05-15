@@ -1,0 +1,16 @@
+experiment_id: dry_run
+num_episodes: 2
+seed_start: 0
+scenario_ids:
+  - direct_pick_blocked_by_distractor
+planner_modes:
+  - naive_no_risk
+  - oracle_risk
+planner:
+  lambda_risk: 3.0
+  next_skill_threshold: 0.85
+  plan_threshold: 0.85
+  max_replans: 8
+outputs:
+  summary_path: outputs/dry_run_summary.json
+
