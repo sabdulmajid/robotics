@@ -4,7 +4,10 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.uv-python/
+.uv-cache/
 *.egg-info/
+external/
 outputs/*
 !outputs/.gitkeep
 !outputs/openpi_libero/

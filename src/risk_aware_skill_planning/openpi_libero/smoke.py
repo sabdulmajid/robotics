@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import platform
 import shutil
 import subprocess
@@ -32,17 +33,24 @@ def run_openpi_libero_smoke(config: OpenPILiberoSmokeConfig) -> dict[str, Any]:
     if not command_status["nvidia-smi"]:
         warnings.append("nvidia-smi is not available on this node; run GPU smoke through SLURM")
 
-    module_status = {
+    current_module_status = {
         "openpi_client": importlib.util.find_spec("openpi_client") is not None,
         "libero": importlib.util.find_spec("libero") is not None,
         "mujoco": importlib.util.find_spec("mujoco") is not None,
     }
-    if openpi_root.exists() and not module_status["openpi_client"]:
-        blockers.append("openpi_client is not importable in the current Python environment")
-    if openpi_root.exists() and not module_status["libero"]:
-        blockers.append("libero is not importable in the current Python environment")
+    venv_python = openpi_root / "examples/libero/.venv/bin/python"
+    libero_pythonpath = openpi_root / "third_party/libero"
+    venv_module_status = _venv_module_status(venv_python, libero_pythonpath) if venv_python.exists() else {}
+    if openpi_root.exists() and not venv_python.exists():
+        blockers.append(f"OpenPI LIBERO venv does not exist: {venv_python}")
+    if venv_python.exists() and not venv_module_status.get("openpi_client", False):
+        blockers.append("openpi_client is not importable in the OpenPI LIBERO venv")
+    if venv_python.exists() and not venv_module_status.get("libero", False):
+        blockers.append("libero is not importable in the OpenPI LIBERO venv")
 
     gpu_status = _capture_command(["nvidia-smi", "--query-gpu=name,memory.total,driver_version", "--format=csv,noheader"])
+    if gpu_status["available"] and gpu_status["returncode"] not in (0, None):
+        warnings.append("nvidia-smi is available but failed; GPU driver/NVML may be unusable on this node")
     git_status = _capture_command(["git", "rev-parse", "HEAD"], cwd=openpi_root) if openpi_root.exists() else None
 
     resume_commands = _resume_commands(config)
@@ -52,7 +60,12 @@ def run_openpi_libero_smoke(config: OpenPILiberoSmokeConfig) -> dict[str, Any]:
         "python": sys.version,
         "platform": platform.platform(),
         "command_status": command_status,
-        "module_status": module_status,
+        "module_status": {
+            "current_python": current_module_status,
+            "openpi_libero_venv": venv_module_status,
+            "venv_python": str(venv_python),
+            "libero_pythonpath": str(libero_pythonpath),
+        },
         "gpu_status": gpu_status,
         "openpi_git_commit": git_status,
         "blockers": blockers,
@@ -111,13 +124,14 @@ def _require_path(path: Path, blockers: list[str]) -> None:
         blockers.append(f"Expected OpenPI path is missing: {path}")
 
 
-def _capture_command(command: list[str], cwd: Path | None = None) -> dict[str, Any]:
+def _capture_command(command: list[str], cwd: Path | None = None, env: dict[str, str] | None = None) -> dict[str, Any]:
     if shutil.which(command[0]) is None:
         return {"available": False, "command": command, "returncode": None, "stdout": "", "stderr": ""}
     try:
         completed = subprocess.run(
             command,
             cwd=cwd,
+            env=env,
             check=False,
             text=True,
             stdout=subprocess.PIPE,
@@ -133,6 +147,28 @@ def _capture_command(command: list[str], cwd: Path | None = None) -> dict[str, A
         "stdout": completed.stdout.strip(),
         "stderr": completed.stderr.strip(),
     }
+
+
+def _venv_module_status(venv_python: Path, libero_pythonpath: Path) -> dict[str, bool]:
+    env = dict(os.environ)
+    env["PYTHONPATH"] = f"{libero_pythonpath}:{env.get('PYTHONPATH', '')}"
+    command = [
+        str(venv_python),
+        "-c",
+        (
+            "import importlib.util, json; "
+            "mods=['openpi_client','libero','libero.lifelong','mujoco','torch']; "
+            "print(json.dumps({m: importlib.util.find_spec(m) is not None for m in mods}))"
+        ),
+    ]
+    result = _capture_command(command, env=env)
+    if result["returncode"] != 0:
+        return {"_probe_failed": True}
+    try:
+        parsed = json.loads(result["stdout"])
+    except json.JSONDecodeError:
+        return {"_probe_failed": True}
+    return {str(key): bool(value) for key, value in parsed.items()}
 
 
 def _resume_commands(config: OpenPILiberoSmokeConfig) -> list[str]:

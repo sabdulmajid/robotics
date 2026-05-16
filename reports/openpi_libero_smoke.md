@@ -6,16 +6,7 @@ Policy config: `pi05_libero`
 Checkpoint: `gs://openpi-assets/checkpoints/pi05_libero/`
 LIBERO suite/task: `libero_spatial` / `0`
 
-Status: `BLOCKED`
-
-## Blockers
-
-- OpenPI root does not exist: external/openpi
-- uv is not available; OpenPI's LIBERO docs use uv for the non-Docker path
-
-## Warnings
-
-- nvidia-smi is not available on this node; run GPU smoke through SLURM
+Status: `PASS`
 
 ## Resume Commands
 
@@ -37,15 +28,12 @@ MUJOCO_GL=egl python examples/libero/main.py --task-suite-name libero_spatial
 
 ```json
 {
-  "blockers": [
-    "OpenPI root does not exist: external/openpi",
-    "uv is not available; OpenPI's LIBERO docs use uv for the non-Docker path"
-  ],
+  "blockers": [],
   "command_status": {
-    "docker": true,
+    "docker": false,
     "git": true,
-    "nvidia-smi": false,
-    "uv": false
+    "nvidia-smi": true,
+    "uv": true
   },
   "config": {
     "checkpoint": "gs://openpi-assets/checkpoints/pi05_libero/",
@@ -73,23 +61,44 @@ MUJOCO_GL=egl python examples/libero/main.py --task-suite-name libero_spatial
     "task_id": 0
   },
   "gpu_status": {
-    "available": false,
+    "available": true,
     "command": [
       "nvidia-smi",
       "--query-gpu=name,memory.total,driver_version",
       "--format=csv,noheader"
     ],
-    "returncode": null,
+    "returncode": 0,
     "stderr": "",
-    "stdout": ""
+    "stdout": "NVIDIA RTX A4500, 20470 MiB, 575.57.08\nNVIDIA RTX A4500, 20470 MiB, 575.57.08"
   },
   "module_status": {
-    "libero": false,
-    "mujoco": false,
-    "openpi_client": false
+    "current_python": {
+      "libero": false,
+      "mujoco": false,
+      "openpi_client": false
+    },
+    "libero_pythonpath": "external/openpi/third_party/libero",
+    "openpi_libero_venv": {
+      "libero": true,
+      "libero.lifelong": true,
+      "mujoco": true,
+      "openpi_client": true,
+      "torch": true
+    },
+    "venv_python": "external/openpi/examples/libero/.venv/bin/python"
   },
-  "ok": false,
-  "openpi_git_commit": null,
+  "ok": true,
+  "openpi_git_commit": {
+    "available": true,
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "c23745b5ad24e98f66967ea795a07b2588ed6c79"
+  },
   "platform": "Linux-5.15.0-161-generic-x86_64-with-glibc2.35",
   "python": "3.13.5 | packaged by Anaconda, Inc. | (main, Jun 12 2025, 16:09:02) [GCC 11.2.0]",
   "resume_commands": [
@@ -105,8 +114,6 @@ MUJOCO_GL=egl python examples/libero/main.py --task-suite-name libero_spatial
     "uv run scripts/serve_policy.py --env LIBERO",
     "MUJOCO_GL=egl python examples/libero/main.py --task-suite-name libero_spatial"
   ],
-  "warnings": [
-    "nvidia-smi is not available on this node; run GPU smoke through SLURM"
-  ]
+  "warnings": []
 }
 ```
