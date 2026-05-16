@@ -4,8 +4,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=40G
+#SBATCH --cpus-per-task=6
+#SBATCH --mem=32G
 #SBATCH --time=02:00:00
 #SBATCH --chdir=/mnt/slurm_nfs/a6abdulm/robotics
 #SBATCH --output=/mnt/slurm_nfs/a6abdulm/robotics/outputs/openpi_libero/official_smoke_%j.out
