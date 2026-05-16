@@ -1,0 +1,24 @@
+experiment_id: openpi_libero_smoke
+openpi:
+  repo_url: https://github.com/Physical-Intelligence/openpi.git
+  root: external/openpi
+  policy_config: pi05_libero
+  checkpoint: gs://openpi-assets/checkpoints/pi05_libero/
+  server_command:
+    - uv
+    - run
+    - scripts/serve_policy.py
+    - --env
+    - LIBERO
+libero:
+  suite: libero_spatial
+  task_id: 0
+  episodes: 1
+  seed: 0
+  client_command:
+    - python
+    - examples/libero/main.py
+  default_action_horizon: 10
+outputs:
+  status_path: outputs/openpi_libero/smoke_status.json
+  report_path: reports/openpi_libero_smoke.md

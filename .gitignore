@@ -7,10 +7,16 @@ __pycache__/
 *.egg-info/
 outputs/*
 !outputs/.gitkeep
+!outputs/openpi_libero/
+outputs/openpi_libero/*
+!outputs/openpi_libero/.gitkeep
 checkpoints/*
 !checkpoints/.gitkeep
 datasets/*
 !datasets/.gitkeep
+!datasets/openpi_libero_rollouts/
+datasets/openpi_libero_rollouts/*
+!datasets/openpi_libero_rollouts/.gitkeep
 videos/*
 !videos/.gitkeep
 reports/figures/*

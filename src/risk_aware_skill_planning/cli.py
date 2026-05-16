@@ -15,6 +15,9 @@ from risk_aware_skill_planning.evaluation.risk_eval import (
     write_toy_risk_report,
 )
 from risk_aware_skill_planning.evaluation.toy_eval import run_toy_suite
+from risk_aware_skill_planning.openpi_libero import load_smoke_config, run_openpi_libero_smoke
+from risk_aware_skill_planning.openpi_libero.smoke import write_smoke_report
+from risk_aware_skill_planning.openpi_libero.summary import summarize_rollout_file
 from risk_aware_skill_planning.plotting import write_planner_comparison_svg, write_reliability_svg
 from risk_aware_skill_planning.planning.toy_planner import PlannerConfig, ToyPlanner, run_toy_episode
 
@@ -176,6 +179,35 @@ def cmd_toy_risk_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_openpi_libero_smoke(args: argparse.Namespace) -> int:
+    config = load_smoke_config(args.config)
+    status = run_openpi_libero_smoke(config)
+    config.status_path.parent.mkdir(parents=True, exist_ok=True)
+    config.status_path.write_text(json.dumps(status, indent=2, sort_keys=True), encoding="utf-8")
+    write_smoke_report(status, config.report_path)
+    print(
+        json.dumps(
+            {
+                "ok": status["ok"],
+                "status_path": str(config.status_path),
+                "report_path": str(config.report_path),
+                "blockers": status["blockers"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+    if args.strict and not status["ok"]:
+        return 2
+    return 0
+
+
+def cmd_openpi_libero_summarize(args: argparse.Namespace) -> int:
+    summary = summarize_rollout_file(args.input, args.output)
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Risk-aware skill planning utilities")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -205,6 +237,26 @@ def build_parser() -> argparse.ArgumentParser:
     toy_risk_eval = subparsers.add_parser("toy-risk-eval", help="Train/evaluate toy learned risk baselines")
     toy_risk_eval.add_argument("--config", required=True)
     toy_risk_eval.set_defaults(func=cmd_toy_risk_eval)
+
+    openpi_smoke = subparsers.add_parser(
+        "openpi-libero-smoke",
+        help="Check OpenPI/LIBERO setup and write a smoke status report",
+    )
+    openpi_smoke.add_argument("--config", required=True)
+    openpi_smoke.add_argument(
+        "--strict",
+        action="store_true",
+        help="Return non-zero when OpenPI/LIBERO blockers are found",
+    )
+    openpi_smoke.set_defaults(func=cmd_openpi_libero_smoke)
+
+    openpi_summarize = subparsers.add_parser(
+        "openpi-libero-summarize",
+        help="Summarize OpenPI/LIBERO rollout JSONL logs",
+    )
+    openpi_summarize.add_argument("--input", required=True)
+    openpi_summarize.add_argument("--output")
+    openpi_summarize.set_defaults(func=cmd_openpi_libero_summarize)
 
     return parser
 

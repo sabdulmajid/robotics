@@ -2,18 +2,54 @@
 
 [![ci](https://github.com/sabdulmajid/robotics/actions/workflows/ci.yml/badge.svg)](https://github.com/sabdulmajid/robotics/actions/workflows/ci.yml)
 
-Toy oracle validation for state-conditioned risk in receding-horizon symbolic skill planning.
+Risk-aware execution for robot foundation policies, starting with OpenPI/LIBERO.
 
-This repository is a research scaffold for a broader manipulation-planning project: long-horizon skill plans fail when they compose brittle skills, and a planner should make better choices when it has calibrated, state-conditioned estimates of skill failure risk. The current result is deliberately narrower: a short-horizon stochastic symbolic toy domain that validates the planner/risk/logging/evaluation interfaces with an oracle risk model before any robosuite environment or learned neural risk critic is introduced.
+This repository is a research scaffold for a broader manipulation-planning project: long-horizon skill plans fail when they compose brittle skills, and a planner should make better choices when it has calibrated, state-conditioned estimates of skill failure risk. The immediate target is now **Risk-Aware Execution for OpenPI Robot Foundation Policies on LIBERO**. The existing toy domain remains a regression gate for planner/risk/calibration logic.
 
 Current status:
 
 - Toy symbolic risk-planning harness: implemented and tested.
 - Oracle-risk planning gate: passing on two frozen stochastic scenarios.
 - Learned toy risk model: implemented as a calibrated logistic baseline over stochastic toy rollouts.
-- Robosuite environment, learned policies, and learned risk critics: planned but not yet implemented.
+- OpenPI/LIBERO integration boundary: configs, smoke checker, rollout log schema, supervisor logic, and SLURM entrypoints added.
+- Actual OpenPI/LIBERO rollout experiments: next execution step; do not claim OpenPI results until the smoke job passes with real OpenPI actions.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
+
+## OpenPI/LIBERO Target
+
+The main project direction is to wrap OpenPI `pi05_libero` execution with calibrated risk prediction and adaptive supervision.
+
+| Component | Role in this project | Status |
+| --- | --- | --- |
+| [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | setup boundary implemented |
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | setup boundary implemented |
+| VLM/image features | Frozen image/language embeddings for risk prediction, after rollout logging works | planned |
+| World model features | Optional learned latent transition/progress predictor from rollout logs | planned ablation |
+| [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline, not required for first OpenPI result | planned |
+
+Execution modes to evaluate once OpenPI smoke passes:
+
+```text
+direct_openpi
+fixed_task_prior
+learned_risk_openpi
+selective_openpi
+adaptive_chunk_openpi
+no_progress_replan
+```
+
+The key intervention is `adaptive_chunk_openpi`: low predicted risk uses the normal action horizon, medium/high risk shortens the action horizon and re-queries OpenPI more often, and extreme/no-progress cases abstain or stop early.
+
+Current OpenPI/LIBERO commands:
+
+```bash
+python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml
+python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml --strict
+python -m risk_aware_skill_planning.cli openpi-libero-summarize --input datasets/openpi_libero_rollouts/example.jsonl
+```
+
+The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 
 ## Why This Exists
 
@@ -119,6 +155,7 @@ python -m risk_aware_skill_planning.cli smoke
 python -m risk_aware_skill_planning.cli dry-run --config configs/toy_oracle_validation.yaml
 python -m risk_aware_skill_planning.cli toy-eval --config configs/toy_oracle_validation.yaml
 python -m risk_aware_skill_planning.cli toy-risk-eval --config configs/toy_risk_learning.yaml
+python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml
 python -m risk_aware_skill_planning.cli toy-trace \
   --scenario direct_pick_blocked_by_distractor \
   --planner-mode oracle_risk \
@@ -133,6 +170,7 @@ Expected verification:
 - `dry-run` validates the experiment config and prints sample candidate-plan logs.
 - `toy-eval` regenerates the result JSON under `outputs/`.
 - `toy-risk-eval` trains toy learned-risk baselines, writes a tracked report, and regenerates SVG figures.
+- `openpi-libero-smoke` checks whether OpenPI/LIBERO is installed and writes exact blockers/resume commands.
 - `toy-trace` writes a full per-episode trace, including candidate plans and selected skills.
 
 ## Code Map
@@ -146,15 +184,17 @@ Expected verification:
 | [src/risk_aware_skill_planning/planning/toy_planner.py](src/risk_aware_skill_planning/planning/toy_planner.py) | Candidate-plan enumeration, risk-aware scoring, rejection, and receding-horizon execution. |
 | [src/risk_aware_skill_planning/evaluation/metrics.py](src/risk_aware_skill_planning/evaluation/metrics.py) | Coverage-aware success, rejection, catastrophic failure, utility, and CI metrics. |
 | [src/risk_aware_skill_planning/evaluation/risk_eval.py](src/risk_aware_skill_planning/evaluation/risk_eval.py) | Toy learned-risk training, calibration, skill metrics, and planner impact evaluation. |
+| [src/risk_aware_skill_planning/openpi_libero](src/risk_aware_skill_planning/openpi_libero) | OpenPI/LIBERO setup boundary, rollout schema, summarization, and supervisor decisions. |
 | [src/risk_aware_skill_planning/cli.py](src/risk_aware_skill_planning/cli.py) | Smoke, dry-run, evaluation, and trace command entry points. |
 | [tests/test_toy_harness.py](tests/test_toy_harness.py) | Regression tests for the toy gate and planner behavior. |
 
-## SLURM Smoke Test
+## SLURM Smoke Tests
 
-The smoke job uses the requested project cluster defaults: `midcard`, `gpu:1`, `4` CPUs, and `24G` memory. It is CPU-light despite requesting a GPU, so edit the partition and `gres` lines if running on a different cluster.
+The toy smoke job uses the requested project cluster defaults: `midcard`, `gpu:1`, `4` CPUs, and `24G` memory. It is CPU-light despite requesting a GPU, so edit the partition and `gres` lines if running on a different cluster.
 
 ```bash
 sbatch slurm/smoke_test.sbatch
+sbatch slurm/openpi_libero_smoke.sbatch
 ```
 
 ## Output Policy
@@ -173,14 +213,15 @@ reports/       tracked summaries and final report assets
 
 - The current result is a toy stochastic symbolic validation, not a manipulation benchmark.
 - `oracle_risk` uses the simulator's ground-truth risk rules. The learned-risk result is still toy-domain only.
+- OpenPI/LIBERO smoke setup is implemented, but no OpenPI result is claimed until the strict smoke command runs with actual OpenPI actions.
 - No robosuite environment, learned manipulation policy, robosuite risk critic, or video demo is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
-1. Freeze the toy scenarios and keep the oracle and learned-risk gates as regression tests.
-2. Add the shared robosuite tabletop MVP environment with the same contracts.
-3. Implement scripted manipulation skills and oracle scenario validation.
-4. Generate policy demos and risk rollouts separately.
-5. Train and calibrate state-conditioned robosuite risk critics.
-6. Evaluate long-horizon planners under fixed coverage or a fixed rejection budget.
+1. Make OpenPI/LIBERO strict smoke pass with `pi05_libero`.
+2. Collect direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
+3. Train and calibrate risk critics from real rollout logs.
+4. Evaluate selective and adaptive action-horizon supervisors.
+5. Add VLM/image embeddings and optional world-model features as ablations.
+6. Keep toy oracle and learned-risk gates as regression tests.

@@ -1,0 +1,33 @@
+experiment_id: openpi_libero_rollouts
+openpi:
+  root: external/openpi
+  policy_config: pi05_libero
+  checkpoint: gs://openpi-assets/checkpoints/pi05_libero/
+libero:
+  suites:
+    - libero_spatial
+    - libero_object
+    - libero_goal
+    - libero_10
+  episodes_per_task: 3
+  seed_start: 0
+execution:
+  modes:
+    - direct_openpi
+    - fixed_task_prior
+    - learned_risk_openpi
+    - selective_openpi
+    - adaptive_chunk_openpi
+  action_horizons:
+    low_risk: 10
+    medium_risk: 5
+    high_risk: 2
+  risk_thresholds:
+    low: 0.35
+    medium: 0.65
+    high: 0.85
+    abstain: 0.95
+outputs:
+  rollout_dir: datasets/openpi_libero_rollouts
+  summary_path: reports/openpi_libero_rollout_summary.json
+  report_path: reports/openpi_libero_risk_planning.md
