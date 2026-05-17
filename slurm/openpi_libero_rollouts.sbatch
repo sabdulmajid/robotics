@@ -27,6 +27,8 @@ TASK_IDS="${TASK_IDS:-0 1 2}"
 NUM_TRIALS="${NUM_TRIALS:-3}"
 SEED="${SEED:-7}"
 REPLAN_STEPS="${REPLAN_STEPS:-5}"
+STRESSORS="${STRESSORS:-none}"
+STRESSOR_SEVERITY="${STRESSOR_SEVERITY:-0.0}"
 
 mkdir -p "${REPO_ROOT}/outputs/openpi_libero" "${REPO_ROOT}/datasets/openpi_libero_rollouts"
 mkdir -p "${REPO_ROOT}/videos" "${REPO_ROOT}/checkpoints/openpi_cache" "${REPO_ROOT}/.cache"
@@ -114,22 +116,27 @@ then
 fi
 
 ROLLOUT_FILES=()
-for suite in ${SUITES}; do
-  for task_id in ${TASK_IDS}; do
-    jsonl_out="${REPO_ROOT}/datasets/openpi_libero_rollouts/openpi_${suite}_task${task_id}_${JOB_ID}.jsonl"
-    video_out="${REPO_ROOT}/videos/openpi_${suite}_task${task_id}_${JOB_ID}"
-    "${OPENPI_ROOT}/examples/libero/.venv/bin/python" scripts/openpi_libero_single_task_eval.py \
-      --openpi-root "${OPENPI_ROOT}" \
-      --host 127.0.0.1 \
-      --port "${PORT}" \
-      --task-suite-name "${suite}" \
-      --task-id "${task_id}" \
-      --num-trials "${NUM_TRIALS}" \
-      --seed "${SEED}" \
-      --replan-steps "${REPLAN_STEPS}" \
-      --jsonl-out "${jsonl_out}" \
-      --video-out-path "${video_out}"
-    ROLLOUT_FILES+=("${jsonl_out}")
+for stressor in ${STRESSORS}; do
+  for suite in ${SUITES}; do
+    for task_id in ${TASK_IDS}; do
+      jsonl_out="${REPO_ROOT}/datasets/openpi_libero_rollouts/openpi_${suite}_task${task_id}_${stressor}_${JOB_ID}.jsonl"
+      video_out="${REPO_ROOT}/videos/openpi_${suite}_task${task_id}_${stressor}_${JOB_ID}"
+      "${OPENPI_ROOT}/examples/libero/.venv/bin/python" scripts/openpi_libero_single_task_eval.py \
+        --openpi-root "${OPENPI_ROOT}" \
+        --run-id "openpi_${suite}_${stressor}_${JOB_ID}" \
+        --host 127.0.0.1 \
+        --port "${PORT}" \
+        --task-suite-name "${suite}" \
+        --task-id "${task_id}" \
+        --num-trials "${NUM_TRIALS}" \
+        --seed "${SEED}" \
+        --replan-steps "${REPLAN_STEPS}" \
+        --stressor-name "${stressor}" \
+        --stressor-severity "${STRESSOR_SEVERITY}" \
+        --jsonl-out "${jsonl_out}" \
+        --video-out-path "${video_out}"
+      ROLLOUT_FILES+=("${jsonl_out}")
+    done
   done
 done
 

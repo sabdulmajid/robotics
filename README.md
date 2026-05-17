@@ -52,6 +52,7 @@ python scripts/openpi_libero_single_task_eval.py --dry-run
 sbatch slurm/openpi_libero_smoke.sbatch
 sbatch slurm/openpi_libero_official_smoke.sbatch
 SUITES="libero_spatial libero_goal" TASK_IDS="0 1 2" NUM_TRIALS=3 sbatch slurm/openpi_libero_rollouts.sbatch
+SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.7 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
