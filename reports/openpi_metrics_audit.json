@@ -1,0 +1,187 @@
+{
+  "calibration_threshold_recomputed": 0.8,
+  "failures": [],
+  "global_prior_test_auprc": 0.3333333333333333,
+  "global_prior_test_positive_rate": 0.3333333333333333,
+  "metric_checks": {
+    "class_balance": {
+      "all": {
+        "examples": 30,
+        "failure_rate": 0.3333333333333333,
+        "failures": 10,
+        "timeout_rate": 0.3333333333333333,
+        "timeouts": 10
+      },
+      "calibration": {
+        "examples": 6,
+        "failure_rate": 0.3333333333333333,
+        "failures": 2,
+        "timeout_rate": 0.3333333333333333,
+        "timeouts": 2
+      },
+      "test": {
+        "examples": 6,
+        "failure_rate": 0.3333333333333333,
+        "failures": 2,
+        "timeout_rate": 0.3333333333333333,
+        "timeouts": 2
+      },
+      "train": {
+        "examples": 18,
+        "failure_rate": 0.3333333333333333,
+        "failures": 6,
+        "timeout_rate": 0.3333333333333333,
+        "timeouts": 6
+      }
+    },
+    "test_baselines": {
+      "fixed_task_prior": {
+        "auprc": 1.0,
+        "auroc": 1.0,
+        "brier": 0.12065972222222222,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.3125,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.4005437767912483,
+        "positive_rate": 0.3333333333333333
+      },
+      "global_prior": {
+        "auprc": 0.3333333333333333,
+        "auroc": 0.5,
+        "brier": 0.22222222222222224,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.0,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.6365141682948128,
+        "positive_rate": 0.3333333333333333
+      }
+    },
+    "test_metrics": {
+      "auprc": 0.75,
+      "auroc": 0.75,
+      "brier": 0.43167604432835865,
+      "coverage_at_threshold": 0.6666666666666666,
+      "ece": 0.4654797675593596,
+      "examples": 6,
+      "failure_rate_attempted": 0.25,
+      "nll": 1.1221286498421035,
+      "positive_rate": 0.3333333333333333,
+      "reliability_bins": [
+        {
+          "bin_high": 0.1,
+          "bin_low": 0.0,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.2,
+          "bin_low": 0.1,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.3,
+          "bin_low": 0.2,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.4,
+          "bin_low": 0.3,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.5,
+          "bin_low": 0.4,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.6,
+          "bin_low": 0.5,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.7,
+          "bin_low": 0.6,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.8,
+          "bin_low": 0.7,
+          "count": 4,
+          "empirical_failure_rate": 0.25,
+          "mean_predicted_risk": 0.7887946317942122
+        },
+        {
+          "bin_high": 0.9,
+          "bin_low": 0.8,
+          "count": 2,
+          "empirical_failure_rate": 0.5,
+          "mean_predicted_risk": 0.8188500390896545
+        },
+        {
+          "bin_high": 1.0,
+          "bin_low": 0.9,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        }
+      ]
+    }
+  },
+  "ok": true,
+  "raw_episode_counts": {
+    "abstained": 9,
+    "by_mode": {
+      "adaptive_chunk_openpi": 6,
+      "direct_openpi": 33,
+      "selective_openpi": 9
+    },
+    "by_stressor": {
+      "action_noise": 6,
+      "none": 12,
+      "occlusion": 30
+    },
+    "by_suite": {
+      "libero_10": 1,
+      "libero_goal": 1,
+      "libero_object": 1,
+      "libero_spatial": 45
+    },
+    "episodes": 48,
+    "successes": 23,
+    "timeouts": 16
+  },
+  "split_overlap": {
+    "calibration_test": [],
+    "train_calibration": [],
+    "train_test": []
+  },
+  "split_sizes": {
+    "calibration": 6,
+    "test": 6,
+    "train": 18
+  },
+  "summary_threshold": 0.8,
+  "training_input_paths": [
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10094.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10095.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10096.jsonl"
+  ],
+  "training_modes": [
+    "direct_openpi"
+  ]
+}

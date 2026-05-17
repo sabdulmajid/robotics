@@ -88,17 +88,18 @@ def auroc(labels: Sequence[int], probs: Sequence[float]) -> float | None:
 def auprc(labels: Sequence[int], probs: Sequence[float]) -> float | None:
     if sum(labels) == 0:
         return None
-    pairs = sorted(zip(probs, labels), reverse=True)
     tp = 0
     fp = 0
     prev_recall = 0.0
     area = 0.0
     positives = sum(labels)
-    for _, label in pairs:
-        if label:
-            tp += 1
-        else:
-            fp += 1
+    score_groups: dict[float, list[int]] = {}
+    for prob, label in zip(probs, labels):
+        score_groups.setdefault(float(prob), []).append(int(label))
+    for score in sorted(score_groups, reverse=True):
+        group = score_groups[score]
+        tp += sum(group)
+        fp += len(group) - sum(group)
         recall = tp / positives
         precision = tp / (tp + fp)
         area += precision * (recall - prev_recall)

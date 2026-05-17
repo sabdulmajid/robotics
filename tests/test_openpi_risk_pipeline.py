@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from risk_aware_skill_planning.evaluation.openpi_risk import run_openpi_risk_training
+from risk_aware_skill_planning.evaluation.openpi_metrics import auprc
 from risk_aware_skill_planning.risk.openpi_dataset import load_openpi_risk_examples
 
 
@@ -43,6 +44,10 @@ def test_openpi_risk_loader_deduplicates_combined_and_per_task_logs(tmp_path: Pa
 
     assert len(examples) == 1
     assert examples[0].episode_id == "ep_success_0"
+
+
+def test_auprc_handles_tied_scores_without_positive_first_bias() -> None:
+    assert auprc([0, 1, 0], [0.5, 0.5, 0.5]) == 1 / 3
 
 
 def _episode(episode_id: str, *, success: bool, stressor: str, severity: float, action_norm: float) -> dict[str, object]:

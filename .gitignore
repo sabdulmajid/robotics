@@ -24,6 +24,9 @@ datasets/openpi_libero_rollouts/*
 !datasets/openpi_libero_rollouts/.gitkeep
 videos/*
 !videos/.gitkeep
+!videos/failure_examples/
+videos/failure_examples/*
+!videos/failure_examples/index.md
 reports/figures/*
 !reports/figures/.gitkeep
 !reports/figures/*.svg
