@@ -64,6 +64,7 @@ def summarize_mode(episodes: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "episodes": total,
         "coverage": 1.0 - sum(abstain_values) / total if total else 0.0,
         "task_completion_rate": sum(success_values) / total if total else 0.0,
+        "attempted_completion_rate": sum(success_values) / attempted,
         "failure_rate": sum(failure_values) / total if total else 0.0,
         "failure_rate_attempted": sum(failure_values) / attempted,
         "timeout_rate": sum(timeout_values) / total if total else 0.0,
@@ -73,7 +74,9 @@ def summarize_mode(episodes: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "mean_runtime_risk_compute_seconds": mean(risk_time_values) if risk_time_values else 0.0,
         "ci95": {
             "task_completion_rate": bootstrap_ci(success_values, mean_float, samples=500),
+            "attempted_completion_rate": bootstrap_ci(outcomes, attempted_completion_rate, samples=500),
             "failure_rate": bootstrap_ci(failure_values, mean_float, samples=500),
+            "failure_rate_attempted": bootstrap_ci(outcomes, failure_rate_attempted, samples=500),
             "timeout_rate": bootstrap_ci(timeout_values, mean_float, samples=500),
             "abstention_rate": bootstrap_ci(abstain_values, mean_float, samples=500),
             "expected_utility": bootstrap_ci(utility_values, mean_float, samples=500),
@@ -136,6 +139,16 @@ def count_by_stressor_severity(episodes: Sequence[Mapping[str, Any]]) -> dict[st
 
 def mean_float(values: Sequence[float]) -> float:
     return sum(float(value) for value in values) / len(values) if values else 0.0
+
+
+def attempted_completion_rate(outcomes: Sequence[Mapping[str, Any]]) -> float:
+    attempted = [item for item in outcomes if not bool(item["abstained"])]
+    return sum(float(item["success"]) for item in attempted) / len(attempted) if attempted else 0.0
+
+
+def failure_rate_attempted(outcomes: Sequence[Mapping[str, Any]]) -> float:
+    attempted = [item for item in outcomes if not bool(item["abstained"])]
+    return sum(float(item["failure"]) for item in attempted) / len(attempted) if attempted else 0.0
 
 
 if __name__ == "__main__":

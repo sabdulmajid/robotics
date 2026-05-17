@@ -40,6 +40,7 @@ OPENPI_SYNC_ENV="${OPENPI_SYNC_ENV:-0}"
 SAVE_IMAGES="${SAVE_IMAGES:-0}"
 OPENPI_INSTALL_VISION_DEPS="${OPENPI_INSTALL_VISION_DEPS:-0}"
 RUNTIME_RISK_PREFIX_STEPS="${RUNTIME_RISK_PREFIX_STEPS:-10}"
+RUNTIME_RISK_THRESHOLD_OVERRIDE="${RUNTIME_RISK_THRESHOLD_OVERRIDE:-}"
 SIGLIP_MODEL="${SIGLIP_MODEL:-google/siglip-base-patch16-224}"
 SIGLIP_DIMS="${SIGLIP_DIMS:-64}"
 RUNTIME_VISION_DEVICE="${RUNTIME_VISION_DEVICE:-cpu}"
@@ -169,6 +170,10 @@ for stressor in ${STRESSORS}; do
       if [[ "${SAVE_IMAGES}" == "1" ]]; then
         image_args+=(--save-images)
       fi
+      threshold_args=()
+      if [[ -n "${RUNTIME_RISK_THRESHOLD_OVERRIDE}" ]]; then
+        threshold_args+=(--runtime-risk-threshold-override "${RUNTIME_RISK_THRESHOLD_OVERRIDE}")
+      fi
       "${OPENPI_ROOT}/examples/libero/.venv/bin/python" scripts/openpi_libero_single_task_eval.py \
         --openpi-root "${OPENPI_ROOT}" \
         --run-id "openpi_${suite}_${stressor}_${JOB_ID}" \
@@ -185,6 +190,7 @@ for stressor in ${STRESSORS}; do
         --high-risk-threshold "${HIGH_RISK_THRESHOLD}" \
         --abstain-threshold "${ABSTAIN_THRESHOLD}" \
         --runtime-risk-prefix-steps "${RUNTIME_RISK_PREFIX_STEPS}" \
+        "${threshold_args[@]}" \
         --siglip-model "${SIGLIP_MODEL}" \
         --siglip-dims "${SIGLIP_DIMS}" \
         --runtime-vision-device "${RUNTIME_VISION_DEVICE}" \

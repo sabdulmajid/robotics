@@ -54,6 +54,7 @@ def test_runtime_fixed_and_vision_risk_modes_score_from_summary() -> None:
         task_id=0,
         abstain_threshold=0.95,
         replan_steps=5,
+        runtime_risk_threshold_override=None,
     )
     fixed_summary = {
         "ok": True,
@@ -87,6 +88,7 @@ def test_runtime_fixed_and_vision_risk_modes_score_from_summary() -> None:
         stressor_name="none",
         stressor_severity=0.0,
         abstain_threshold=0.95,
+        runtime_risk_threshold_override=None,
     )
     vision_summary = {
         "ok": True,
@@ -118,10 +120,85 @@ def test_runtime_fixed_and_vision_risk_modes_score_from_summary() -> None:
     assert vision_decision["action"] == "abstain"
     assert vision_decision["threshold"] == 0.5
 
+    vision_args.runtime_risk_threshold_override = 0.95
+    tuned_decision = module.decide_runtime_supervisor(vision_args, vision_risk, risk_summary=vision_summary)
+    assert tuned_decision["action"] == "vision_language_risk_selective"
+    assert tuned_decision["threshold"] == 0.95
+
+
+def test_runtime_threshold_sweep_uses_task_disjoint_calibration() -> None:
+    module = _load_script_module("scripts/sweep_openpi_runtime_thresholds.py", "openpi_threshold_sweep")
+    episodes = []
+    risks = {
+        0: 0.1,
+        1: 0.2,
+        2: 0.9,
+        3: 0.1,
+        4: 0.8,
+        5: 0.9,
+    }
+    direct_success = {
+        0: True,
+        1: True,
+        2: False,
+        3: True,
+        4: False,
+        5: False,
+    }
+    for task_id, risk in risks.items():
+        episodes.append(_episode("direct_openpi", task_id, success=direct_success[task_id]))
+        episodes.append(_episode("fixed_task_prior_selective", task_id, success=direct_success[task_id]))
+        episodes.append(_episode("vision_language_risk_selective", task_id, success=False, risk=risk, abstained=risk > 0.5))
+
+    sweep = module.build_threshold_sweep(episodes, target_coverages=[0.50], calibration_task_max=2)
+
+    assert sweep["ok"]
+    assert sweep["split"]["calibration_task_ids"] == [0, 1, 2]
+    assert sweep["split"]["test_task_ids"] == [3, 4, 5]
+    row = sweep["threshold_rows"][0]
+    assert row["threshold_source"] == "runtime_calibration_split"
+    assert row["test"]["coverage"] == 1 / 3
+    assert row["test"]["failure_rate_attempted"] == 0.0
+
 
 def _load_single_task_eval_module():
-    spec = importlib.util.spec_from_file_location("openpi_single_eval", "scripts/openpi_libero_single_task_eval.py")
+    return _load_script_module("scripts/openpi_libero_single_task_eval.py", "openpi_single_eval")
+
+
+def _load_script_module(path: str, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _episode(mode: str, task_id: int, *, success: bool, risk: float | None = None, abstained: bool = False) -> dict:
+    decision = None
+    if risk is not None:
+        decision = {
+            "predicted_risk": risk,
+            "threshold": 0.5,
+            "prefix_steps_observed": 10,
+        }
+    terminal_label = "abstained" if abstained else "success" if success else "timeout"
+    return {
+        "mode": mode,
+        "libero_suite": "libero_spatial",
+        "libero_task_id": task_id,
+        "stressor_name": "none",
+        "stressor_params": {"severity": 0.0},
+        "success": success and not abstained,
+        "timeout": (not success) and not abstained,
+        "terminal_label": terminal_label,
+        "failure_label": terminal_label,
+        "episode_length": 10 if abstained else 50,
+        "n_action_steps": 5,
+        "runtime_supervisor_decision": decision,
+        "metadata": {
+            "episode_index": 0,
+            "init_state_index": 0,
+            "action_queries": 2 if abstained else 10,
+            "runtime_supervisor_decision": decision,
+        },
+    }

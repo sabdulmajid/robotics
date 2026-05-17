@@ -210,11 +210,11 @@ The offline SigLIP result has now been moved into the real OpenPI/LIBERO executi
 
 Runtime validation used held-out SLURM jobs `10133` through `10147` on `libero_spatial` tasks `0..9`, seed `2000`, and three trials per task/condition. The stress grid was `none:0.0`, `occlusion:0.4`, `occlusion:0.6`, `occlusion:0.8`, `occlusion:1.0`, `action_noise:0.4`, and `action_noise:0.6`. Each mode has `210` real robot-policy episodes, for `630` runtime episodes total, all on `NVIDIA RTX A4500`.
 
-| Runtime mode | Episodes | Coverage | Completion | Failure attempted | Timeout | Abstain | Utility | Query overhead | Risk compute s |
+| Runtime mode | Episodes | Coverage | Completion | Attempted completion | Failure attempted | Timeout | Abstain | Utility | Query overhead |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `direct_openpi` | 210 | 1.000 | 0.695 | 0.305 | 0.305 | 0.000 | 0.528 | 1.000 | 0.000000 |
-| `fixed_task_prior_selective` | 210 | 1.000 | 0.686 | 0.314 | 0.314 | 0.000 | 0.514 | 1.016 | 0.000011 |
-| `vision_language_risk_selective` | 210 | 0.681 | 0.595 | 0.126 | 0.086 | 0.319 | 0.480 | 0.597 | 0.000103 |
+| `direct_openpi` | 210 | 1.000 | 0.695 | 0.695 | 0.305 | 0.305 | 0.000 | 0.528 | 1.000 |
+| `fixed_task_prior_selective` | 210 | 1.000 | 0.686 | 0.686 | 0.314 | 0.314 | 0.000 | 0.514 | 1.016 |
+| `vision_language_risk_selective` | 210 | 0.681 | 0.595 | 0.874 | 0.126 | 0.086 | 0.319 | 0.480 | 0.597 |
 
 Bootstrap confidence intervals:
 
@@ -227,6 +227,30 @@ Bootstrap confidence intervals:
 Interpretation: the runtime SigLIP supervisor meaningfully reduces failures among attempted episodes (`0.126` vs `0.305` for direct OpenPI and `0.314` for fixed priors), and it cuts policy-query load by abstaining from severe occlusion settings. The offline result only partially holds online: the calibration threshold is too conservative under the held-out runtime stress distribution, so completion and utility are lower than direct OpenPI because `31.9%` of episodes are rejected. This is a useful risk signal, not yet the final supervisor operating point.
 
 One caveat on overhead: `mean_runtime_risk_compute_seconds` is the per-episode prediction call after the SigLIP model is loaded. It does not include one-time model load or dependency setup time inside the SLURM job.
+
+### Runtime Threshold Sweep
+
+The next experiment tunes the operating point without changing the model or architecture. Thresholds are selected only on a task-disjoint runtime calibration split: tasks `0..4` are calibration and tasks `5..9` are test. The split uses the same seven stress conditions per task. Each threshold is chosen from calibration risk scores to target a desired calibration coverage, then evaluated once on the held-out test tasks.
+
+This sweep uses paired real runtime data: runtime SigLIP provides the risk score for each condition, and the paired `direct_openpi` episode provides the outcome if that condition is attempted. If a threshold rejects an episode, the evaluator uses the observed 10-step runtime prefix cost as the abstention proxy. It is therefore a paired runtime threshold sweep, not a separate resimulation for every threshold.
+
+Direct OpenPI on the test split has utility `0.571` and attempted failure `0.276`.
+
+| Calibration target | Threshold | Test coverage | Completion | Attempted completion | Attempted failure | Failure reduction | Abstain | Utility | Utility delta |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.70 | 0.807366 | 0.686 | 0.629 | 0.917 | 0.083 | 0.193 | 0.314 | 0.528 | -0.043 |
+| 0.75 | 0.933328 | 0.781 | 0.714 | 0.915 | 0.085 | 0.191 | 0.219 | 0.627 | 0.056 |
+| 0.80 | 0.957162 | 0.810 | 0.714 | 0.882 | 0.118 | 0.159 | 0.190 | 0.618 | 0.047 |
+| 0.85 | 0.986033 | 0.857 | 0.724 | 0.844 | 0.156 | 0.121 | 0.143 | 0.617 | 0.046 |
+| 0.90 | 0.995939 | 0.933 | 0.724 | 0.776 | 0.224 | 0.052 | 0.067 | 0.592 | 0.021 |
+| 0.95 | 0.997775 | 0.962 | 0.724 | 0.752 | 0.248 | 0.029 | 0.038 | 0.583 | 0.012 |
+| 1.00 | 0.999146 | 1.000 | 0.724 | 0.724 | 0.276 | 0.000 | 0.000 | 0.571 | 0.000 |
+
+Best utility operating point: target `0.75`, test coverage `0.781`, utility `0.627`, and attempted failure `0.085`. This beats direct OpenPI test utility by `0.056` while reducing attempted failure by `0.191`.
+
+Best safety operating point: target `0.70`, test attempted failure `0.083`, at test coverage `0.686`. If coverage must be at least `0.85`, the best row is target `0.85`, with test coverage `0.857` and attempted failure `0.156`. At at least `0.90` coverage, the best row is target `0.90`, with attempted failure `0.224`. At at least `0.95` coverage, the best row is target `0.95`, with attempted failure `0.248`.
+
+Bootstrap confidence intervals for every threshold row are stored in `reports/openpi_runtime_siglip_eval_summary.json`. For the best-utility row, utility CI is `[0.513, 0.746]` and attempted-failure CI is `[0.025, 0.148]`.
 
 ## Offline Supervisor
 
@@ -313,6 +337,13 @@ PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py \
   --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' \
   --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl' \
   --output reports/openpi_runtime_siglip_eval_summary.json
+
+PYTHONPATH=src python scripts/sweep_openpi_runtime_thresholds.py \
+  --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' \
+  --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl' \
+  --output reports/openpi_runtime_siglip_eval_summary.json
+
+RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 SEED=3000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
 ## Limitations
@@ -320,7 +351,7 @@ PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py \
 - This is an OpenPI/LIBERO execution-risk study, not a formal safety guarantee.
 - The deployable structured model excludes injected stressor metadata; the metadata-aware model is reported only as a diagnostic upper bound.
 - The VLM result uses frozen first-frame SigLIP embeddings from rollout videos; it is an observed-image ablation, not a finetuned VLM or learned dynamics model.
-- Runtime SigLIP supervision currently improves attempted-failure rate by rejecting high-risk episodes, but the current threshold is too conservative for utility at full comparison coverage.
+- Runtime SigLIP supervision improves attempted-failure rate by rejecting high-risk episodes. The original offline threshold is too conservative online, but the task-disjoint runtime threshold sweep finds utility-positive operating points in the paired runtime analysis.
 
 <!-- OPENPI_METRICS_AUDIT_START -->
 ## Metrics Audit

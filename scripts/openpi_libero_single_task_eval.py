@@ -110,6 +110,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--checkpoint", default="gs://openpi-assets/checkpoints/pi05_libero/")
     parser.add_argument("--risk-summary")
     parser.add_argument("--runtime-risk-prefix-steps", type=int, default=10)
+    parser.add_argument("--runtime-risk-threshold-override", type=float)
     parser.add_argument("--siglip-model", default="google/siglip-base-patch16-224")
     parser.add_argument("--siglip-dims", type=int, default=64)
     parser.add_argument("--runtime-vision-device", default="cpu", choices=("auto", "cpu", "cuda"))
@@ -831,6 +832,9 @@ def runtime_abstain_threshold(
     risk_summary: Optional[Dict[str, Any]],
     risk_payload: Optional[Dict[str, Any]],
 ) -> float:
+    override = getattr(args, "runtime_risk_threshold_override", None)
+    if override is not None:
+        return float(override)
     if not risk_summary:
         return float(args.abstain_threshold)
     if args.mode == VISION_SELECTIVE_MODE:

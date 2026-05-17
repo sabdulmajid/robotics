@@ -27889,7 +27889,7 @@
     "gpu_models": {
       "NVIDIA RTX A4500": 630
     },
-    "interpretation": "Runtime SigLIP selective supervision reduces failure among attempted OpenPI/LIBERO episodes, but the calibration threshold is conservative online and lowers coverage, completion, and utility.",
+    "interpretation": "Runtime SigLIP selective supervision reduces failure among attempted OpenPI/LIBERO episodes. A task-disjoint runtime calibration/test threshold sweep finds utility-positive operating points, with the 75% calibration target giving the best test utility in the paired runtime sweep.",
     "jobs": [
       10133,
       10134,
@@ -27910,11 +27910,18 @@
     "modes": {
       "direct_openpi": {
         "abstention_rate": 0.0,
+        "attempted_completion_rate": 0.6952380952380952,
         "ci95": {
           "abstention_rate": {
             "high": 0.0,
             "low": 0.0,
             "mean": 0.0,
+            "samples": 500
+          },
+          "attempted_completion_rate": {
+            "high": 0.7619047619047619,
+            "low": 0.638095238095238,
+            "mean": 0.6972571428571429,
             "samples": 500
           },
           "expected_utility": {
@@ -27924,6 +27931,12 @@
             "samples": 500
           },
           "failure_rate": {
+            "high": 0.3619047619047619,
+            "low": 0.23809523809523808,
+            "mean": 0.30274285714285715,
+            "samples": 500
+          },
+          "failure_rate_attempted": {
             "high": 0.3619047619047619,
             "low": 0.23809523809523808,
             "mean": 0.30274285714285715,
@@ -27955,11 +27968,18 @@
       },
       "fixed_task_prior_selective": {
         "abstention_rate": 0.0,
+        "attempted_completion_rate": 0.6857142857142857,
         "ci95": {
           "abstention_rate": {
             "high": 0.0,
             "low": 0.0,
             "mean": 0.0,
+            "samples": 500
+          },
+          "attempted_completion_rate": {
+            "high": 0.7476190476190476,
+            "low": 0.6190476190476191,
+            "mean": 0.6866857142857142,
             "samples": 500
           },
           "expected_utility": {
@@ -27969,6 +27989,12 @@
             "samples": 500
           },
           "failure_rate": {
+            "high": 0.3761904761904762,
+            "low": 0.2523809523809524,
+            "mean": 0.3133142857142857,
+            "samples": 500
+          },
+          "failure_rate_attempted": {
             "high": 0.3761904761904762,
             "low": 0.2523809523809524,
             "mean": 0.3133142857142857,
@@ -28000,11 +28026,18 @@
       },
       "vision_language_risk_selective": {
         "abstention_rate": 0.319047619047619,
+        "attempted_completion_rate": 0.8741258741258742,
         "ci95": {
           "abstention_rate": {
             "high": 0.38095238095238093,
             "low": 0.2523809523809524,
             "mean": 0.31715238095238096,
+            "samples": 500
+          },
+          "attempted_completion_rate": {
+            "high": 0.927007299270073,
+            "low": 0.8195488721804511,
+            "mean": 0.8751137226588606,
             "samples": 500
           },
           "expected_utility": {
@@ -28017,6 +28050,12 @@
             "high": 0.12857142857142856,
             "low": 0.047619047619047616,
             "mean": 0.08533333333333333,
+            "samples": 500
+          },
+          "failure_rate_attempted": {
+            "high": 0.1793103448275862,
+            "low": 0.07246376811594203,
+            "mean": 0.12488627734113945,
             "samples": 500
           },
           "task_completion_rate": {
@@ -28045,6 +28084,1775 @@
       }
     },
     "runtime_risk_prefix_steps": 10,
+    "runtime_threshold_sweep": {
+      "baselines": {
+        "all": {
+          "direct_openpi": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.6952380952380952,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7571428571428571,
+                "low": 0.638095238095238,
+                "mean": 0.6969142857142857,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6217338095238095,
+                "low": 0.4419771428571429,
+                "mean": 0.5308324552380952,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.3619047619047619,
+                "low": 0.24285714285714285,
+                "mean": 0.3030857142857143,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7571428571428571,
+                "low": 0.638095238095238,
+                "mean": 0.6969142857142857,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3619047619047619,
+                "low": 0.24285714285714285,
+                "mean": 0.3030857142857143,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 210,
+            "expected_utility": 0.5283052380952381,
+            "failure_rate": 0.3047619047619048,
+            "failure_rate_attempted": 0.3047619047619048,
+            "mean_policy_queries": 29.385714285714286,
+            "policy_query_overhead_vs_direct": 1.0,
+            "task_completion_rate": 0.6952380952380952,
+            "timeout_rate": 0.3047619047619048
+          },
+          "fixed_task_prior_selective": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.6857142857142857,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7476190476190476,
+                "low": 0.6238095238095238,
+                "mean": 0.6873714285714285,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6074295238095238,
+                "low": 0.4199895238095238,
+                "mean": 0.5162782295238095,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.3761904761904762,
+                "low": 0.2523809523809524,
+                "mean": 0.3126285714285714,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7476190476190476,
+                "low": 0.6238095238095238,
+                "mean": 0.6873714285714285,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3761904761904762,
+                "low": 0.2523809523809524,
+                "mean": 0.3126285714285714,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 210,
+            "expected_utility": 0.5137838095238095,
+            "failure_rate": 0.3142857142857143,
+            "failure_rate_attempted": 0.3142857142857143,
+            "mean_policy_queries": 29.86190476190476,
+            "policy_query_overhead_vs_direct": 1.0162048290390535,
+            "task_completion_rate": 0.6857142857142857,
+            "timeout_rate": 0.3142857142857143
+          },
+          "vision_language_risk_selective": {
+            "abstention_rate": 0.319047619047619,
+            "attempted_completion_rate": 0.8741258741258742,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.38095238095238093,
+                "low": 0.2571428571428571,
+                "mean": 0.3174952380952381,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9253731343283582,
+                "low": 0.8120805369127517,
+                "mean": 0.8735104074205442,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.7428571428571429,
+                "low": 0.6190476190476191,
+                "mean": 0.682504761904762,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.5637828571428571,
+                "low": 0.39360666666666666,
+                "mean": 0.4808177438095238,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.1870967741935484,
+                "low": 0.07432432432432433,
+                "mean": 0.12648959257945575,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.6619047619047619,
+                "low": 0.5285714285714286,
+                "mean": 0.5961619047619048,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.12857142857142856,
+                "low": 0.047619047619047616,
+                "mean": 0.08634285714285714,
+                "samples": 500
+              }
+            },
+            "coverage": 0.680952380952381,
+            "episodes": 210,
+            "expected_utility": 0.47991904761904763,
+            "failure_rate": 0.08571428571428572,
+            "failure_rate_attempted": 0.1258741258741259,
+            "mean_policy_queries": 17.538095238095238,
+            "policy_query_overhead_vs_direct": 0.5968238535083454,
+            "task_completion_rate": 0.5952380952380952,
+            "timeout_rate": 0.08571428571428572
+          }
+        },
+        "calibration": {
+          "direct_openpi": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.6666666666666666,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6153695238095238,
+                "low": 0.35586380952380947,
+                "mean": 0.4945623828571428,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.41904761904761906,
+                "low": 0.23809523809523808,
+                "mean": 0.3273714285714286,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.41904761904761906,
+                "low": 0.23809523809523808,
+                "mean": 0.3273714285714286,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.48556190476190475,
+            "failure_rate": 0.3333333333333333,
+            "failure_rate_attempted": 0.3333333333333333,
+            "mean_policy_queries": 29.152380952380952,
+            "policy_query_overhead_vs_direct": 1.0,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.3333333333333333
+          },
+          "fixed_task_prior_selective": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.6666666666666666,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7619047619047619,
+                "low": 0.5714285714285714,
+                "mean": 0.6708761904761905,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6293647619047619,
+                "low": 0.3414790476190476,
+                "mean": 0.4917217695238095,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.42857142857142855,
+                "low": 0.23809523809523808,
+                "mean": 0.32912380952380954,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7619047619047619,
+                "low": 0.5714285714285714,
+                "mean": 0.6708761904761905,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.42857142857142855,
+                "low": 0.23809523809523808,
+                "mean": 0.32912380952380954,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.4853685714285714,
+            "failure_rate": 0.3333333333333333,
+            "failure_rate_attempted": 0.3333333333333333,
+            "mean_policy_queries": 29.533333333333335,
+            "policy_query_overhead_vs_direct": 1.0130676249591637,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.3333333333333333
+          },
+          "vision_language_risk_selective": {
+            "abstention_rate": 0.3142857142857143,
+            "attempted_completion_rate": 0.8611111111111112,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.3904761904761905,
+                "low": 0.22857142857142856,
+                "mean": 0.3124190476190476,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9333333333333333,
+                "low": 0.775,
+                "mean": 0.8630742435177862,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.7714285714285715,
+                "low": 0.6,
+                "mean": 0.6875809523809524,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.5972304761904762,
+                "low": 0.3542828571428571,
+                "mean": 0.47551242666666665,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.2236842105263158,
+                "low": 0.06153846153846154,
+                "mean": 0.1369257564822138,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.6857142857142857,
+                "low": 0.5047619047619047,
+                "mean": 0.5935047619047619,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.1523809523809524,
+                "low": 0.0380952380952381,
+                "mean": 0.09407619047619048,
+                "samples": 500
+              }
+            },
+            "coverage": 0.6857142857142857,
+            "episodes": 105,
+            "expected_utility": 0.47153809523809526,
+            "failure_rate": 0.09523809523809523,
+            "failure_rate_attempted": 0.1388888888888889,
+            "mean_policy_queries": 17.152380952380952,
+            "policy_query_overhead_vs_direct": 0.5883698137863443,
+            "task_completion_rate": 0.5904761904761905,
+            "timeout_rate": 0.09523809523809523
+          }
+        },
+        "test": {
+          "direct_openpi": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.7238095238095238,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7143780952380951,
+                "low": 0.4413971428571428,
+                "mean": 0.5744234819047619,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.3619047619047619,
+                "low": 0.18095238095238095,
+                "mean": 0.27396190476190474,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3619047619047619,
+                "low": 0.18095238095238095,
+                "mean": 0.27396190476190474,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.5710485714285715,
+            "failure_rate": 0.2761904761904762,
+            "failure_rate_attempted": 0.2761904761904762,
+            "mean_policy_queries": 29.61904761904762,
+            "policy_query_overhead_vs_direct": 1.0,
+            "task_completion_rate": 0.7238095238095238,
+            "timeout_rate": 0.2761904761904762
+          },
+          "fixed_task_prior_selective": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.7047619047619048,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.8,
+                "low": 0.6190476190476191,
+                "mean": 0.7065333333333333,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6860361904761905,
+                "low": 0.41265523809523813,
+                "mean": 0.5448769066666667,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.38095238095238093,
+                "low": 0.2,
+                "mean": 0.29346666666666665,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.8,
+                "low": 0.6190476190476191,
+                "mean": 0.7065333333333333,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.38095238095238093,
+                "low": 0.2,
+                "mean": 0.29346666666666665,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.5421990476190476,
+            "failure_rate": 0.29523809523809524,
+            "failure_rate_attempted": 0.29523809523809524,
+            "mean_policy_queries": 30.19047619047619,
+            "policy_query_overhead_vs_direct": 1.0192926045016077,
+            "task_completion_rate": 0.7047619047619048,
+            "timeout_rate": 0.29523809523809524
+          },
+          "vision_language_risk_selective": {
+            "abstention_rate": 0.3238095238095238,
+            "attempted_completion_rate": 0.8873239436619719,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.4095238095238095,
+                "low": 0.23809523809523808,
+                "mean": 0.32207619047619046,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9583333333333334,
+                "low": 0.803030303030303,
+                "mean": 0.8864101131518922,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.7619047619047619,
+                "low": 0.5904761904761905,
+                "mean": 0.6779238095238095,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6109123809523809,
+                "low": 0.3598571428571428,
+                "mean": 0.4893319561904762,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.19696969696969696,
+                "low": 0.0410958904109589,
+                "mean": 0.11358988684810772,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.6952380952380952,
+                "low": 0.5047619047619047,
+                "mean": 0.601047619047619,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.13333333333333333,
+                "low": 0.02857142857142857,
+                "mean": 0.07687619047619047,
+                "samples": 500
+              }
+            },
+            "coverage": 0.6761904761904762,
+            "episodes": 105,
+            "expected_utility": 0.4883,
+            "failure_rate": 0.0761904761904762,
+            "failure_rate_attempted": 0.11267605633802817,
+            "mean_policy_queries": 17.923809523809524,
+            "policy_query_overhead_vs_direct": 0.6051446945337621,
+            "task_completion_rate": 0.6,
+            "timeout_rate": 0.0761904761904762
+          }
+        }
+      },
+      "best_operating_points": {
+        "beats_direct_openpi_utility": true,
+        "best_failure_reduction_at_or_above_85_coverage": {
+          "abstention_rate": 0.14285714285714285,
+          "attempted_completion_rate": 0.8444444444444444,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.2,
+              "low": 0.0761904761904762,
+              "mean": 0.13952380952380952,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.9186046511627907,
+              "low": 0.7555555555555555,
+              "mean": 0.8436508550348216,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 0.9238095238095239,
+              "low": 0.8,
+              "mean": 0.8604761904761905,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.7404276190476191,
+              "low": 0.49642571428571425,
+              "mean": 0.6192106247619048,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.24210526315789474,
+              "low": 0.07954545454545454,
+              "mean": 0.15634914496517835,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.819047619047619,
+              "low": 0.638095238095238,
+              "mean": 0.7260380952380953,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.20952380952380953,
+              "low": 0.06666666666666667,
+              "mean": 0.13443809523809525,
+              "samples": 500
+            }
+          },
+          "coverage": 0.8571428571428571,
+          "episodes": 105,
+          "expected_utility": 0.6169057142857143,
+          "failure_attempted_reduction_vs_direct": 0.12063492063492065,
+          "failure_rate": 0.13333333333333333,
+          "failure_rate_attempted": 0.15555555555555556,
+          "mean_policy_queries": 23.61904761904762,
+          "policy_query_overhead_vs_direct": 0.797427652733119,
+          "target_coverage": 0.85,
+          "task_completion_rate": 0.7238095238095238,
+          "threshold": 0.9860334584902223,
+          "timeout_rate": 0.13333333333333333,
+          "utility_delta_vs_direct": 0.04585714285714282
+        },
+        "best_failure_reduction_at_or_above_90_coverage": {
+          "abstention_rate": 0.06666666666666667,
+          "attempted_completion_rate": 0.7755102040816326,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.11428571428571428,
+              "low": 0.02857142857142857,
+              "mean": 0.06527619047619047,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.8571428571428571,
+              "low": 0.6868686868686869,
+              "mean": 0.7766496579218228,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 0.9714285714285714,
+              "low": 0.8857142857142857,
+              "mean": 0.9347238095238095,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.7217666666666667,
+              "low": 0.46604761904761904,
+              "mean": 0.595377139047619,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.31,
+              "low": 0.14285714285714285,
+              "mean": 0.22335034207817717,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.819047619047619,
+              "low": 0.638095238095238,
+              "mean": 0.7260380952380953,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.2857142857142857,
+              "low": 0.13333333333333333,
+              "mean": 0.20868571428571428,
+              "samples": 500
+            }
+          },
+          "coverage": 0.9333333333333333,
+          "episodes": 105,
+          "expected_utility": 0.5924485714285714,
+          "failure_attempted_reduction_vs_direct": 0.05170068027210886,
+          "failure_rate": 0.20952380952380953,
+          "failure_rate_attempted": 0.22448979591836735,
+          "mean_policy_queries": 26.81904761904762,
+          "policy_query_overhead_vs_direct": 0.9054662379421222,
+          "target_coverage": 0.9,
+          "task_completion_rate": 0.7238095238095238,
+          "threshold": 0.9959386988077509,
+          "timeout_rate": 0.20952380952380953,
+          "utility_delta_vs_direct": 0.021399999999999975
+        },
+        "best_failure_reduction_at_or_above_95_coverage": {
+          "abstention_rate": 0.0380952380952381,
+          "attempted_completion_rate": 0.7524752475247525,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.0761904761904762,
+              "low": 0.009523809523809525,
+              "mean": 0.038361904761904764,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.8349514563106796,
+              "low": 0.6699029126213593,
+              "mean": 0.7549365614279723,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 0.9904761904761905,
+              "low": 0.9238095238095239,
+              "mean": 0.9616380952380952,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.7176952380952382,
+              "low": 0.4568761904761905,
+              "mean": 0.5867376533333333,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.33,
+              "low": 0.1650485436893204,
+              "mean": 0.24506343857202775,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.819047619047619,
+              "low": 0.638095238095238,
+              "mean": 0.7260380952380953,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.3238095238095238,
+              "low": 0.1619047619047619,
+              "mean": 0.2356,
+              "samples": 500
+            }
+          },
+          "coverage": 0.9619047619047619,
+          "episodes": 105,
+          "expected_utility": 0.5832771428571428,
+          "failure_attempted_reduction_vs_direct": 0.028665723715228686,
+          "failure_rate": 0.23809523809523808,
+          "failure_rate_attempted": 0.24752475247524752,
+          "mean_policy_queries": 28.01904761904762,
+          "policy_query_overhead_vs_direct": 0.9459807073954983,
+          "target_coverage": 0.95,
+          "task_completion_rate": 0.7238095238095238,
+          "threshold": 0.997775162986235,
+          "timeout_rate": 0.23809523809523808,
+          "utility_delta_vs_direct": 0.012228571428571366
+        },
+        "best_utility": {
+          "abstention_rate": 0.21904761904761905,
+          "attempted_completion_rate": 0.9146341463414634,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.29523809523809524,
+              "low": 0.13333333333333333,
+              "mean": 0.2152952380952381,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.975,
+              "low": 0.8505747126436781,
+              "mean": 0.9140266487522177,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 0.8666666666666667,
+              "low": 0.7047619047619048,
+              "mean": 0.7847047619047619,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.7455990476190476,
+              "low": 0.5128857142857143,
+              "mean": 0.6304386704761905,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.14814814814814814,
+              "low": 0.024691358024691357,
+              "mean": 0.08597335124778226,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.8095238095238095,
+              "low": 0.6285714285714286,
+              "mean": 0.717352380952381,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.11428571428571428,
+              "low": 0.01904761904761905,
+              "mean": 0.06735238095238096,
+              "samples": 500
+            }
+          },
+          "coverage": 0.780952380952381,
+          "episodes": 105,
+          "expected_utility": 0.6270047619047618,
+          "failure_attempted_reduction_vs_direct": 0.1908246225319396,
+          "failure_rate": 0.06666666666666667,
+          "failure_rate_attempted": 0.08536585365853659,
+          "mean_policy_queries": 20.561904761904763,
+          "policy_query_overhead_vs_direct": 0.6942122186495177,
+          "target_coverage": 0.75,
+          "task_completion_rate": 0.7142857142857143,
+          "threshold": 0.9333276460818999,
+          "timeout_rate": 0.06666666666666667,
+          "utility_delta_vs_direct": 0.05595619047619038
+        },
+        "direct_openpi_test_failure_rate_attempted": 0.2761904761904762,
+        "direct_openpi_test_utility": 0.5710485714285715,
+        "most_productive_mode": {
+          "abstention_rate": 0.0,
+          "attempted_completion_rate": 0.7238095238095238,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.0,
+              "low": 0.0,
+              "mean": 0.0,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.819047619047619,
+              "low": 0.638095238095238,
+              "mean": 0.7260380952380953,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 1.0,
+              "low": 1.0,
+              "mean": 1.0,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.7143780952380951,
+              "low": 0.4413971428571428,
+              "mean": 0.5744234819047619,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.3619047619047619,
+              "low": 0.18095238095238095,
+              "mean": 0.27396190476190474,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.819047619047619,
+              "low": 0.638095238095238,
+              "mean": 0.7260380952380953,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.3619047619047619,
+              "low": 0.18095238095238095,
+              "mean": 0.27396190476190474,
+              "samples": 500
+            }
+          },
+          "coverage": 1.0,
+          "episodes": 105,
+          "expected_utility": 0.5710485714285715,
+          "failure_attempted_reduction_vs_direct": 0.0,
+          "failure_rate": 0.2761904761904762,
+          "failure_rate_attempted": 0.2761904761904762,
+          "mean_policy_queries": 29.61904761904762,
+          "policy_query_overhead_vs_direct": 1.0,
+          "target_coverage": 1.0,
+          "task_completion_rate": 0.7238095238095238,
+          "threshold": 0.9991463381590526,
+          "timeout_rate": 0.2761904761904762,
+          "utility_delta_vs_direct": 0.0
+        },
+        "safest_mode": {
+          "abstention_rate": 0.3142857142857143,
+          "attempted_completion_rate": 0.9166666666666666,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.4,
+              "low": 0.22857142857142856,
+              "mean": 0.31215238095238096,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 0.975,
+              "low": 0.8461538461538461,
+              "mean": 0.9164524218314613,
+              "samples": 500
+            },
+            "coverage": {
+              "high": 0.7714285714285715,
+              "low": 0.5904761904761905,
+              "mean": 0.687847619047619,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.6479723809523809,
+              "low": 0.4007609523809524,
+              "mean": 0.5306409104761904,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.14925373134328357,
+              "low": 0.025,
+              "mean": 0.08354757816853872,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 0.7238095238095238,
+              "low": 0.5238095238095238,
+              "mean": 0.6305142857142857,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.10476190476190476,
+              "low": 0.01904761904761905,
+              "mean": 0.05733333333333333,
+              "samples": 500
+            }
+          },
+          "coverage": 0.6857142857142857,
+          "episodes": 105,
+          "expected_utility": 0.5283809523809524,
+          "failure_attempted_reduction_vs_direct": 0.1928571428571429,
+          "failure_rate": 0.05714285714285714,
+          "failure_rate_attempted": 0.08333333333333333,
+          "mean_policy_queries": 17.79047619047619,
+          "policy_query_overhead_vs_direct": 0.6006430868167203,
+          "target_coverage": 0.7,
+          "task_completion_rate": 0.6285714285714286,
+          "threshold": 0.8073661845568538,
+          "timeout_rate": 0.05714285714285714,
+          "utility_delta_vs_direct": -0.042667619047619065
+        }
+      },
+      "counterfactual_note": "Thresholds are selected from runtime calibration risk scores. Test outcomes use paired direct_openpi episodes when a threshold would attempt, and a 10-step runtime-prefix abstention proxy when it would reject.",
+      "evaluation_type": "paired runtime SigLIP risk scores with paired real direct OpenPI outcomes for accepted attempts",
+      "ok": true,
+      "paired_episodes": 210,
+      "split": {
+        "calibration_episodes": 105,
+        "calibration_task_ids": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "method": "task_disjoint",
+        "test_episodes": 105,
+        "test_task_ids": [
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "threshold_selection": "target coverage thresholds selected only on calibration examples"
+      },
+      "target_coverages": [
+        0.7,
+        0.75,
+        0.8,
+        0.85,
+        0.9,
+        0.95,
+        1.0
+      ],
+      "threshold_rows": [
+        {
+          "calibration": {
+            "abstention_rate": 0.29523809523809524,
+            "attempted_completion_rate": 0.8783783783783784,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.38095238095238093,
+                "low": 0.20952380952380953,
+                "mean": 0.2932,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9452054794520548,
+                "low": 0.8028169014084507,
+                "mean": 0.8815434860594169,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.7904761904761904,
+                "low": 0.6190476190476191,
+                "mean": 0.7068,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6307952380952381,
+                "low": 0.37983619047619044,
+                "mean": 0.5140142514285714,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.19444444444444445,
+                "low": 0.05405405405405406,
+                "mean": 0.11845651394058308,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7142857142857143,
+                "low": 0.5238095238095238,
+                "mean": 0.6232,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.13333333333333333,
+                "low": 0.0380952380952381,
+                "mean": 0.0836,
+                "samples": 500
+              }
+            },
+            "coverage": 0.7047619047619048,
+            "episodes": 105,
+            "expected_utility": 0.5084009523809524,
+            "failure_rate": 0.08571428571428572,
+            "failure_rate_attempted": 0.12162162162162163,
+            "mean_policy_queries": 17.742857142857144,
+            "task_completion_rate": 0.6190476190476191,
+            "timeout_rate": 0.08571428571428572
+          },
+          "target_coverage": 0.7,
+          "test": {
+            "abstention_rate": 0.3142857142857143,
+            "attempted_completion_rate": 0.9166666666666666,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.4,
+                "low": 0.22857142857142856,
+                "mean": 0.31215238095238096,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.975,
+                "low": 0.8461538461538461,
+                "mean": 0.9164524218314613,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.7714285714285715,
+                "low": 0.5904761904761905,
+                "mean": 0.687847619047619,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6479723809523809,
+                "low": 0.4007609523809524,
+                "mean": 0.5306409104761904,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.14925373134328357,
+                "low": 0.025,
+                "mean": 0.08354757816853872,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7238095238095238,
+                "low": 0.5238095238095238,
+                "mean": 0.6305142857142857,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.10476190476190476,
+                "low": 0.01904761904761905,
+                "mean": 0.05733333333333333,
+                "samples": 500
+              }
+            },
+            "coverage": 0.6857142857142857,
+            "episodes": 105,
+            "expected_utility": 0.5283809523809524,
+            "failure_attempted_reduction_vs_direct": 0.1928571428571429,
+            "failure_rate": 0.05714285714285714,
+            "failure_rate_attempted": 0.08333333333333333,
+            "mean_policy_queries": 17.79047619047619,
+            "policy_query_overhead_vs_direct": 0.6006430868167203,
+            "task_completion_rate": 0.6285714285714286,
+            "timeout_rate": 0.05714285714285714,
+            "utility_delta_vs_direct": -0.042667619047619065
+          },
+          "threshold": 0.8073661845568538,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.24761904761904763,
+            "attempted_completion_rate": 0.8481012658227848,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.3142857142857143,
+                "low": 0.1619047619047619,
+                "mean": 0.24426666666666666,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.922077922077922,
+                "low": 0.7702702702702703,
+                "mean": 0.8510488810380771,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.8380952380952381,
+                "low": 0.6857142857142857,
+                "mean": 0.7557333333333334,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.646552380952381,
+                "low": 0.39358666666666664,
+                "mean": 0.5286431942857143,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.22972972972972974,
+                "low": 0.07792207792207792,
+                "mean": 0.1489511189619229,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7333333333333333,
+                "low": 0.5428571428571428,
+                "mean": 0.6432952380952381,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.17142857142857143,
+                "low": 0.05714285714285714,
+                "mean": 0.11243809523809524,
+                "samples": 500
+              }
+            },
+            "coverage": 0.7523809523809524,
+            "episodes": 105,
+            "expected_utility": 0.5218695238095238,
+            "failure_rate": 0.11428571428571428,
+            "failure_rate_attempted": 0.1518987341772152,
+            "mean_policy_queries": 19.38095238095238,
+            "task_completion_rate": 0.638095238095238,
+            "timeout_rate": 0.11428571428571428
+          },
+          "target_coverage": 0.75,
+          "test": {
+            "abstention_rate": 0.21904761904761905,
+            "attempted_completion_rate": 0.9146341463414634,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.29523809523809524,
+                "low": 0.13333333333333333,
+                "mean": 0.2152952380952381,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.975,
+                "low": 0.8505747126436781,
+                "mean": 0.9140266487522177,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.8666666666666667,
+                "low": 0.7047619047619048,
+                "mean": 0.7847047619047619,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7455990476190476,
+                "low": 0.5128857142857143,
+                "mean": 0.6304386704761905,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.14814814814814814,
+                "low": 0.024691358024691357,
+                "mean": 0.08597335124778226,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.8095238095238095,
+                "low": 0.6285714285714286,
+                "mean": 0.717352380952381,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.11428571428571428,
+                "low": 0.01904761904761905,
+                "mean": 0.06735238095238096,
+                "samples": 500
+              }
+            },
+            "coverage": 0.780952380952381,
+            "episodes": 105,
+            "expected_utility": 0.6270047619047618,
+            "failure_attempted_reduction_vs_direct": 0.1908246225319396,
+            "failure_rate": 0.06666666666666667,
+            "failure_rate_attempted": 0.08536585365853659,
+            "mean_policy_queries": 20.561904761904763,
+            "policy_query_overhead_vs_direct": 0.6942122186495177,
+            "task_completion_rate": 0.7142857142857143,
+            "timeout_rate": 0.06666666666666667,
+            "utility_delta_vs_direct": 0.05595619047619038
+          },
+          "threshold": 0.9333276460818999,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.2,
+            "attempted_completion_rate": 0.8333333333333334,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.2761904761904762,
+                "low": 0.12380952380952381,
+                "mean": 0.19664761904761904,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9135802469135802,
+                "low": 0.7564102564102564,
+                "mean": 0.8372571602519381,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.8761904761904762,
+                "low": 0.7238095238095238,
+                "mean": 0.8033523809523809,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.672232380952381,
+                "low": 0.43743714285714286,
+                "mean": 0.5576862685714286,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.23809523809523808,
+                "low": 0.08536585365853659,
+                "mean": 0.16274283974806195,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.19047619047619047,
+                "low": 0.06666666666666667,
+                "mean": 0.13072380952380952,
+                "samples": 500
+              }
+            },
+            "coverage": 0.8,
+            "episodes": 105,
+            "expected_utility": 0.5497619047619048,
+            "failure_rate": 0.13333333333333333,
+            "failure_rate_attempted": 0.16666666666666666,
+            "mean_policy_queries": 20.752380952380953,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.13333333333333333
+          },
+          "target_coverage": 0.8,
+          "test": {
+            "abstention_rate": 0.19047619047619047,
+            "attempted_completion_rate": 0.8823529411764706,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.2571428571428571,
+                "low": 0.11428571428571428,
+                "mean": 0.18678095238095238,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9487179487179487,
+                "low": 0.8048780487804879,
+                "mean": 0.8819485220474449,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.8857142857142857,
+                "low": 0.7428571428571429,
+                "mean": 0.8132190476190476,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7381933333333334,
+                "low": 0.5005780952380952,
+                "mean": 0.6212855847619048,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.1951219512195122,
+                "low": 0.04878048780487805,
+                "mean": 0.1180514779525551,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.8095238095238095,
+                "low": 0.6285714285714286,
+                "mean": 0.717352380952381,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.1523809523809524,
+                "low": 0.0380952380952381,
+                "mean": 0.09586666666666667,
+                "samples": 500
+              }
+            },
+            "coverage": 0.8095238095238095,
+            "episodes": 105,
+            "expected_utility": 0.6178333333333333,
+            "failure_attempted_reduction_vs_direct": 0.1585434173669468,
+            "failure_rate": 0.09523809523809523,
+            "failure_rate_attempted": 0.11764705882352941,
+            "mean_policy_queries": 21.761904761904763,
+            "policy_query_overhead_vs_direct": 0.7347266881028939,
+            "task_completion_rate": 0.7142857142857143,
+            "timeout_rate": 0.09523809523809523,
+            "utility_delta_vs_direct": 0.046784761904761885
+          },
+          "threshold": 0.9571623863669922,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.14285714285714285,
+            "attempted_completion_rate": 0.7777777777777778,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.20952380952380953,
+                "low": 0.0761904761904762,
+                "mean": 0.14047619047619048,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.8631578947368421,
+                "low": 0.6931818181818182,
+                "mean": 0.7824783923522083,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9238095238095239,
+                "low": 0.7904761904761904,
+                "mean": 0.8595238095238096,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.655112380952381,
+                "low": 0.41092095238095233,
+                "mean": 0.53965524,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.30337078651685395,
+                "low": 0.13636363636363635,
+                "mean": 0.2175216076477917,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.2571428571428571,
+                "low": 0.11428571428571428,
+                "mean": 0.1868952380952381,
+                "samples": 500
+              }
+            },
+            "coverage": 0.8571428571428571,
+            "episodes": 105,
+            "expected_utility": 0.5314190476190476,
+            "failure_rate": 0.19047619047619047,
+            "failure_rate_attempted": 0.2222222222222222,
+            "mean_policy_queries": 23.152380952380952,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.19047619047619047
+          },
+          "target_coverage": 0.85,
+          "test": {
+            "abstention_rate": 0.14285714285714285,
+            "attempted_completion_rate": 0.8444444444444444,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.2,
+                "low": 0.0761904761904762,
+                "mean": 0.13952380952380952,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.9186046511627907,
+                "low": 0.7555555555555555,
+                "mean": 0.8436508550348216,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9238095238095239,
+                "low": 0.8,
+                "mean": 0.8604761904761905,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7404276190476191,
+                "low": 0.49642571428571425,
+                "mean": 0.6192106247619048,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.24210526315789474,
+                "low": 0.07954545454545454,
+                "mean": 0.15634914496517835,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.20952380952380953,
+                "low": 0.06666666666666667,
+                "mean": 0.13443809523809525,
+                "samples": 500
+              }
+            },
+            "coverage": 0.8571428571428571,
+            "episodes": 105,
+            "expected_utility": 0.6169057142857143,
+            "failure_attempted_reduction_vs_direct": 0.12063492063492065,
+            "failure_rate": 0.13333333333333333,
+            "failure_rate_attempted": 0.15555555555555556,
+            "mean_policy_queries": 23.61904761904762,
+            "policy_query_overhead_vs_direct": 0.797427652733119,
+            "task_completion_rate": 0.7238095238095238,
+            "timeout_rate": 0.13333333333333333,
+            "utility_delta_vs_direct": 0.04585714285714282
+          },
+          "threshold": 0.9860334584902223,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.09523809523809523,
+            "attempted_completion_rate": 0.7368421052631579,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.14285714285714285,
+                "low": 0.047619047619047616,
+                "mean": 0.09232380952380953,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.8279569892473119,
+                "low": 0.6530612244897959,
+                "mean": 0.7410168949195417,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9523809523809523,
+                "low": 0.8571428571428571,
+                "mean": 0.9076761904761905,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6489428571428572,
+                "low": 0.39253999999999994,
+                "mean": 0.5241983257142857,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.34408602150537637,
+                "low": 0.16666666666666666,
+                "mean": 0.2589831050804583,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3142857142857143,
+                "low": 0.1523809523809524,
+                "mean": 0.23504761904761903,
+                "samples": 500
+              }
+            },
+            "coverage": 0.9047619047619048,
+            "episodes": 105,
+            "expected_utility": 0.5161333333333333,
+            "failure_rate": 0.23809523809523808,
+            "failure_rate_attempted": 0.2631578947368421,
+            "mean_policy_queries": 25.152380952380952,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.23809523809523808
+          },
+          "target_coverage": 0.9,
+          "test": {
+            "abstention_rate": 0.06666666666666667,
+            "attempted_completion_rate": 0.7755102040816326,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.11428571428571428,
+                "low": 0.02857142857142857,
+                "mean": 0.06527619047619047,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.8571428571428571,
+                "low": 0.6868686868686869,
+                "mean": 0.7766496579218228,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9714285714285714,
+                "low": 0.8857142857142857,
+                "mean": 0.9347238095238095,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7217666666666667,
+                "low": 0.46604761904761904,
+                "mean": 0.595377139047619,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.31,
+                "low": 0.14285714285714285,
+                "mean": 0.22335034207817717,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.2857142857142857,
+                "low": 0.13333333333333333,
+                "mean": 0.20868571428571428,
+                "samples": 500
+              }
+            },
+            "coverage": 0.9333333333333333,
+            "episodes": 105,
+            "expected_utility": 0.5924485714285714,
+            "failure_attempted_reduction_vs_direct": 0.05170068027210886,
+            "failure_rate": 0.20952380952380953,
+            "failure_rate_attempted": 0.22448979591836735,
+            "mean_policy_queries": 26.81904761904762,
+            "policy_query_overhead_vs_direct": 0.9054662379421222,
+            "task_completion_rate": 0.7238095238095238,
+            "timeout_rate": 0.20952380952380953,
+            "utility_delta_vs_direct": 0.021399999999999975
+          },
+          "threshold": 0.9959386988077509,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.047619047619047616,
+            "attempted_completion_rate": 0.7,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.09523809523809523,
+                "low": 0.009523809523809525,
+                "mean": 0.046380952380952384,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7961165048543689,
+                "low": 0.6161616161616161,
+                "mean": 0.7053524696308182,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9904761904761905,
+                "low": 0.9047619047619048,
+                "mean": 0.9536190476190476,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6367142857142858,
+                "low": 0.37142285714285717,
+                "mean": 0.5094506685714285,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.3829787234042553,
+                "low": 0.2,
+                "mean": 0.29464753036918173,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.37142857142857144,
+                "low": 0.19047619047619047,
+                "mean": 0.2809904761904762,
+                "samples": 500
+              }
+            },
+            "coverage": 0.9523809523809523,
+            "episodes": 105,
+            "expected_utility": 0.500847619047619,
+            "failure_rate": 0.2857142857142857,
+            "failure_rate_attempted": 0.3,
+            "mean_policy_queries": 27.152380952380952,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.2857142857142857
+          },
+          "target_coverage": 0.95,
+          "test": {
+            "abstention_rate": 0.0380952380952381,
+            "attempted_completion_rate": 0.7524752475247525,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0761904761904762,
+                "low": 0.009523809523809525,
+                "mean": 0.038361904761904764,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.8349514563106796,
+                "low": 0.6699029126213593,
+                "mean": 0.7549365614279723,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 0.9904761904761905,
+                "low": 0.9238095238095239,
+                "mean": 0.9616380952380952,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7176952380952382,
+                "low": 0.4568761904761905,
+                "mean": 0.5867376533333333,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.33,
+                "low": 0.1650485436893204,
+                "mean": 0.24506343857202775,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3238095238095238,
+                "low": 0.1619047619047619,
+                "mean": 0.2356,
+                "samples": 500
+              }
+            },
+            "coverage": 0.9619047619047619,
+            "episodes": 105,
+            "expected_utility": 0.5832771428571428,
+            "failure_attempted_reduction_vs_direct": 0.028665723715228686,
+            "failure_rate": 0.23809523809523808,
+            "failure_rate_attempted": 0.24752475247524752,
+            "mean_policy_queries": 28.01904761904762,
+            "policy_query_overhead_vs_direct": 0.9459807073954983,
+            "task_completion_rate": 0.7238095238095238,
+            "timeout_rate": 0.23809523809523808,
+            "utility_delta_vs_direct": 0.012228571428571366
+          },
+          "threshold": 0.997775162986235,
+          "threshold_source": "runtime_calibration_split"
+        },
+        {
+          "calibration": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.6666666666666666,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.6153695238095238,
+                "low": 0.35586380952380947,
+                "mean": 0.4945623828571428,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.41904761904761906,
+                "low": 0.23809523809523808,
+                "mean": 0.3273714285714286,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.7523809523809524,
+                "low": 0.580952380952381,
+                "mean": 0.6726285714285715,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.41904761904761906,
+                "low": 0.23809523809523808,
+                "mean": 0.3273714285714286,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.48556190476190475,
+            "failure_rate": 0.3333333333333333,
+            "failure_rate_attempted": 0.3333333333333333,
+            "mean_policy_queries": 29.152380952380952,
+            "task_completion_rate": 0.6666666666666666,
+            "timeout_rate": 0.3333333333333333
+          },
+          "target_coverage": 1.0,
+          "test": {
+            "abstention_rate": 0.0,
+            "attempted_completion_rate": 0.7238095238095238,
+            "ci95": {
+              "abstention_rate": {
+                "high": 0.0,
+                "low": 0.0,
+                "mean": 0.0,
+                "samples": 500
+              },
+              "attempted_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "coverage": {
+                "high": 1.0,
+                "low": 1.0,
+                "mean": 1.0,
+                "samples": 500
+              },
+              "expected_utility": {
+                "high": 0.7143780952380951,
+                "low": 0.4413971428571428,
+                "mean": 0.5744234819047619,
+                "samples": 500
+              },
+              "failure_rate_attempted": {
+                "high": 0.3619047619047619,
+                "low": 0.18095238095238095,
+                "mean": 0.27396190476190474,
+                "samples": 500
+              },
+              "task_completion_rate": {
+                "high": 0.819047619047619,
+                "low": 0.638095238095238,
+                "mean": 0.7260380952380953,
+                "samples": 500
+              },
+              "timeout_rate": {
+                "high": 0.3619047619047619,
+                "low": 0.18095238095238095,
+                "mean": 0.27396190476190474,
+                "samples": 500
+              }
+            },
+            "coverage": 1.0,
+            "episodes": 105,
+            "expected_utility": 0.5710485714285715,
+            "failure_attempted_reduction_vs_direct": 0.0,
+            "failure_rate": 0.2761904761904762,
+            "failure_rate_attempted": 0.2761904761904762,
+            "mean_policy_queries": 29.61904761904762,
+            "policy_query_overhead_vs_direct": 1.0,
+            "task_completion_rate": 0.7238095238095238,
+            "timeout_rate": 0.2761904761904762,
+            "utility_delta_vs_direct": 0.0
+          },
+          "threshold": 0.9991463381590526,
+          "threshold_source": "runtime_calibration_split"
+        }
+      ]
+    },
     "seed": 2000,
     "siglip_dims": 64,
     "siglip_model": "google/siglip-base-patch16-224",
