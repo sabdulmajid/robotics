@@ -35,6 +35,7 @@ This is not yet a final research result. The strongest honest statement is: **th
 | 10096 | direct OpenPI | occlusion, severity 1.0 | 9 | 1 | 8 | 0 | Severe occlusion gives a meaningful failure regime. |
 | 10097 | selective OpenPI | occlusion, severity 1.0 | 9 | 0 | 0 | 9 | Risk model rejects all severe-occlusion attempts. Coverage is zero but unsafe/timeouting executions are avoided. |
 | 10098 | adaptive chunk OpenPI | occlusion, severity 1.0 | 6 | 0 | 6 | 0 | Runtime risk supervision executed, but simple action-horizon shortening did not recover successes. |
+| 10099 | direct OpenPI cross-suite smoke | none | 3 | 3 | 0 | 0 | One task-0 episode each for `libero_object`, `libero_goal`, and `libero_10`; validates cross-suite execution path. |
 
 ## Risk Critic Checkpoint
 

@@ -21,7 +21,7 @@ The result is meaningful but not final: OpenPI runs for real, severe occlusion c
 - OpenPI commit: `c23745b5ad24e98f66967ea795a07b2588ed6c79`.
 - Policy config: `pi05_libero`.
 - Checkpoint: `gs://openpi-assets/checkpoints/pi05_libero/`, cached under `checkpoints/openpi_cache`.
-- Benchmark: LIBERO `libero_spatial`, tasks `0`, `1`, `2`.
+- Benchmark: primary risk experiments use LIBERO `libero_spatial`, tasks `0`, `1`, `2`; cross-suite smoke also covers `libero_object`, `libero_goal`, and `libero_10` task `0`.
 - Official smoke: job `10092`, 1 episode, 1 success, 101 steps.
 
 ## Stress Protocol
@@ -42,6 +42,7 @@ Stress metadata is currently used by the transparent logistic risk baseline. The
 | 10096 | direct OpenPI | occlusion, severity 1.0 | 9 | 1 | 8 | 0 | 213.6 |
 | 10097 | selective OpenPI | occlusion, severity 1.0 | 9 | 0 | 0 | 9 | 0.0 |
 | 10098 | adaptive chunk OpenPI | occlusion, severity 1.0 | 6 | 0 | 6 | 0 | 220.0 |
+| 10099 | direct OpenPI cross-suite smoke | none | 3 | 3 | 0 | 0 | 176.0 |
 
 Interpretation:
 
@@ -114,6 +115,7 @@ Coverage/failure tradeoff:
 
 - Selective supervision reduces timeouts at the cost of full rejection under this severe setting.
 - Adaptive action-horizon supervision increases compute overhead and does not improve success in this first severe-occlusion test.
+- Cross-suite task-0 smoke passed for `libero_object`, `libero_goal`, and `libero_10`; this validates that the runner is not Spatial-only, while the risk results remain Spatial-only.
 
 ## Runtime Overhead
 

@@ -77,6 +77,7 @@ Current OpenPI reports:
 - [Severe occlusion rollout summary](reports/openpi_libero_rollout_summary_10096.json)
 - [Selective supervisor rollout summary](reports/openpi_libero_rollout_summary_10097.json)
 - [Adaptive supervisor rollout summary](reports/openpi_libero_rollout_summary_10098.json)
+- [Cross-suite direct rollout summary](reports/openpi_libero_rollout_summary_10099.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)
