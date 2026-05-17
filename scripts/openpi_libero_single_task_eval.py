@@ -33,6 +33,26 @@ DEFAULT_MAX_STEPS = {
     "libero_10": 520,
     "libero_90": 400,
 }
+RUNTIME_FEATURE_NAMES = (
+    "bias",
+    "task_id_scaled",
+    "suite_hash",
+    "language_hash",
+    "n_action_steps_scaled",
+    "stressor_severity",
+    "stressor_none",
+    "stressor_occlusion",
+    "stressor_action_noise",
+    "stressor_gaussian_noise",
+    "stressor_brightness",
+    "stressor_action_delay",
+    "stressor_action_precision",
+    "prefix_action_norm_mean",
+    "prefix_action_norm_max",
+    "prefix_action_smoothness_mean",
+    "prefix_no_progress_mean",
+    "prefix_reward_sum",
+)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -258,6 +278,12 @@ def run_episode(
     latest_supervisor_decision = None
     terminal_label = None
     failure_label = None
+    episode_id = "{0}_task{1:02d}_seed{2}_ep{3:03d}".format(
+        args.task_suite_name, args.task_id, args.seed, episode_idx
+    )
+    frame_dir = video_dir / "frames" / episode_id
+    if args.save_images:
+        frame_dir.mkdir(parents=True, exist_ok=True)
 
     while t < max_steps + args.num_steps_wait:
         try:
@@ -330,18 +356,21 @@ def run_episode(
             no_progress_score = compute_no_progress_score(previous_obs, obs, np_module)
             previous_obs = obs
             previous_action = action
+            rollout_timestep = int(t - args.num_steps_wait)
+            image_path = None
+            if args.save_images:
+                image_path = frame_dir / "{0:04d}.png".format(rollout_timestep)
+                imageio_module.imwrite(str(image_path), img)
 
             step_logs.append(
                 {
                     "run_id": run_metadata["run_id"],
-                    "episode_id": "{0}_task{1:02d}_seed{2}_ep{3:03d}".format(
-                        args.task_suite_name, args.task_id, args.seed, episode_idx
-                    ),
-                    "timestep": int(t - args.num_steps_wait),
+                    "episode_id": episode_id,
+                    "timestep": rollout_timestep,
                     "observation_keys": sorted(str(key) for key in obs.keys()),
                     "observation_summary": summarize_observation(obs, np_module),
-                    "image_path": None,
-                    "image_id": "{0:04d}".format(int(t - args.num_steps_wait)),
+                    "image_path": str(image_path) if image_path is not None else None,
+                    "image_id": "{0:04d}".format(rollout_timestep),
                     "action_chunk_length": int(action_chunk_length),
                     "action_norm": float(np_module.linalg.norm(action)),
                     "action_smoothness": smoothness,
@@ -384,9 +413,6 @@ def run_episode(
         )
         imageio_module.mimwrite(str(video_path), [np_module.asarray(x) for x in replay_images], fps=10)
 
-    episode_id = "{0}_task{1:02d}_seed{2}_ep{3:03d}".format(
-            args.task_suite_name, args.task_id, args.seed, episode_idx
-    )
     metadata = dict(run_metadata)
     metadata.update(
         {
@@ -595,14 +621,17 @@ def predict_runtime_risk(
 ) -> Optional[float]:
     if not risk_summary or not risk_summary.get("ok") or "normalization" not in risk_summary:
         return None
-    features = runtime_feature_vector(args, task_description, step_logs)
+    features = dict(zip(RUNTIME_FEATURE_NAMES, runtime_feature_vector(args, task_description, step_logs)))
     feature_names = risk_summary["feature_names"]
     weights = risk_summary["weights"]
     mean = risk_summary["normalization"]["mean"]
     std = risk_summary["normalization"]["std"]
     temperature = max(float(risk_summary["calibration"]["temperature"]), 1e-6)
     logit = 0.0
-    for name, value in zip(feature_names, features):
+    for name in feature_names:
+        if name not in features:
+            return None
+        value = features[name]
         sigma = max(float(std[name]), 1e-6)
         logit += float(weights[name]) * ((float(value) - float(mean[name])) / sigma)
     return sigmoid(logit / temperature)

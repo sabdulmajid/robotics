@@ -4,6 +4,14 @@ data:
     - datasets/openpi_libero_rollouts/openpi_rollouts_10094.jsonl
     - datasets/openpi_libero_rollouts/openpi_rollouts_10095.jsonl
     - datasets/openpi_libero_rollouts/openpi_rollouts_10096.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10099.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10120.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10121.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10127.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10128.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10129.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10130.jsonl
+    - datasets/openpi_libero_rollouts/openpi_rollouts_10131.jsonl
   prefix_steps: 10
 outputs:
   summary_path: reports/openpi_libero_risk_summary.json

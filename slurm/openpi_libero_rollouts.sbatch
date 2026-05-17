@@ -37,6 +37,7 @@ ABSTAIN_THRESHOLD="${ABSTAIN_THRESHOLD:-0.95}"
 STRESSORS="${STRESSORS:-none}"
 STRESSOR_SEVERITY="${STRESSOR_SEVERITY:-0.0}"
 OPENPI_SYNC_ENV="${OPENPI_SYNC_ENV:-0}"
+SAVE_IMAGES="${SAVE_IMAGES:-0}"
 
 mkdir -p "${REPO_ROOT}/outputs/openpi_libero" "${REPO_ROOT}/datasets/openpi_libero_rollouts"
 mkdir -p "${REPO_ROOT}/videos" "${REPO_ROOT}/checkpoints/openpi_cache" "${REPO_ROOT}/.cache"
@@ -149,6 +150,10 @@ for stressor in ${STRESSORS}; do
       if [[ -n "${RISK_SUMMARY}" ]]; then
         risk_args+=(--risk-summary "${RISK_SUMMARY}")
       fi
+      image_args=()
+      if [[ "${SAVE_IMAGES}" == "1" ]]; then
+        image_args+=(--save-images)
+      fi
       "${OPENPI_ROOT}/examples/libero/.venv/bin/python" scripts/openpi_libero_single_task_eval.py \
         --openpi-root "${OPENPI_ROOT}" \
         --run-id "openpi_${suite}_${stressor}_${JOB_ID}" \
@@ -168,7 +173,8 @@ for stressor in ${STRESSORS}; do
         --stressor-severity "${STRESSOR_SEVERITY}" \
         --jsonl-out "${jsonl_out}" \
         --video-out-path "${video_out}" \
-        "${risk_args[@]}"
+        "${risk_args[@]}" \
+        "${image_args[@]}"
       ROLLOUT_FILES+=("${jsonl_out}")
     done
   done

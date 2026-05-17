@@ -1,73 +1,73 @@
 {
-  "calibration_threshold_recomputed": 0.8,
+  "calibration_threshold_recomputed": 0.5905054457889825,
   "failures": [],
-  "global_prior_test_auprc": 0.3333333333333333,
-  "global_prior_test_positive_rate": 0.3333333333333333,
+  "global_prior_test_auprc": 0.1791044776119403,
+  "global_prior_test_positive_rate": 0.1791044776119403,
   "metric_checks": {
     "class_balance": {
       "all": {
-        "examples": 30,
-        "failure_rate": 0.3333333333333333,
-        "failures": 10,
-        "timeout_rate": 0.3333333333333333,
-        "timeouts": 10
+        "examples": 993,
+        "failure_rate": 0.17522658610271905,
+        "failures": 174,
+        "timeout_rate": 0.17522658610271905,
+        "timeouts": 174
       },
       "calibration": {
-        "examples": 6,
-        "failure_rate": 0.3333333333333333,
-        "failures": 2,
-        "timeout_rate": 0.3333333333333333,
-        "timeouts": 2
+        "examples": 197,
+        "failure_rate": 0.17258883248730963,
+        "failures": 34,
+        "timeout_rate": 0.17258883248730963,
+        "timeouts": 34
       },
       "test": {
-        "examples": 6,
-        "failure_rate": 0.3333333333333333,
-        "failures": 2,
-        "timeout_rate": 0.3333333333333333,
-        "timeouts": 2
+        "examples": 201,
+        "failure_rate": 0.1791044776119403,
+        "failures": 36,
+        "timeout_rate": 0.1791044776119403,
+        "timeouts": 36
       },
       "train": {
-        "examples": 18,
-        "failure_rate": 0.3333333333333333,
-        "failures": 6,
-        "timeout_rate": 0.3333333333333333,
-        "timeouts": 6
+        "examples": 595,
+        "failure_rate": 0.17478991596638654,
+        "failures": 104,
+        "timeout_rate": 0.17478991596638654,
+        "timeouts": 104
       }
     },
     "test_baselines": {
       "fixed_task_prior": {
-        "auprc": 1.0,
-        "auroc": 1.0,
-        "brier": 0.12065972222222222,
+        "auprc": 0.34729499374666967,
+        "auroc": 0.6952861952861953,
+        "brier": 0.13886614214812307,
         "coverage_at_threshold": 1.0,
-        "ece": 0.3125,
-        "examples": 6,
-        "failure_rate_attempted": 0.3333333333333333,
-        "nll": 0.4005437767912483,
-        "positive_rate": 0.3333333333333333
+        "ece": 0.062301862869924444,
+        "examples": 201,
+        "failure_rate_attempted": 0.1791044776119403,
+        "nll": 0.6896441904757808,
+        "positive_rate": 0.1791044776119403
       },
       "global_prior": {
-        "auprc": 0.3333333333333333,
+        "auprc": 0.1791044776119403,
         "auroc": 0.5,
-        "brier": 0.22222222222222224,
+        "brier": 0.14704467915348754,
         "coverage_at_threshold": 1.0,
-        "ece": 0.0,
-        "examples": 6,
-        "failure_rate_attempted": 0.3333333333333333,
-        "nll": 0.6365141682948128,
-        "positive_rate": 0.3333333333333333
+        "ece": 0.004314561645553744,
+        "examples": 201,
+        "failure_rate_attempted": 0.1791044776119403,
+        "nll": 0.4700969604949566,
+        "positive_rate": 0.1791044776119403
       }
     },
     "test_metrics": {
-      "auprc": 0.75,
-      "auroc": 0.75,
-      "brier": 0.43167604432835865,
-      "coverage_at_threshold": 0.6666666666666666,
-      "ece": 0.4654797675593596,
-      "examples": 6,
-      "failure_rate_attempted": 0.25,
-      "nll": 1.1221286498421035,
-      "positive_rate": 0.3333333333333333,
+      "auprc": 0.29714477329086525,
+      "auroc": 0.7015151515151515,
+      "brier": 0.23772062517287326,
+      "coverage_at_threshold": 1.0,
+      "ece": 0.31481135433241586,
+      "examples": 201,
+      "failure_rate_attempted": 0.1791044776119403,
+      "nll": 0.6678673644756632,
+      "positive_rate": 0.1791044776119403,
       "reliability_bins": [
         {
           "bin_high": 0.1,
@@ -93,23 +93,23 @@
         {
           "bin_high": 0.4,
           "bin_low": 0.3,
-          "count": 0,
-          "empirical_failure_rate": 0.0,
-          "mean_predicted_risk": 0.0
+          "count": 34,
+          "empirical_failure_rate": 0.029411764705882353,
+          "mean_predicted_risk": 0.3747623961477098
         },
         {
           "bin_high": 0.5,
           "bin_low": 0.4,
-          "count": 0,
-          "empirical_failure_rate": 0.0,
-          "mean_predicted_risk": 0.0
+          "count": 45,
+          "empirical_failure_rate": 0.08888888888888889,
+          "mean_predicted_risk": 0.4589132990227119
         },
         {
           "bin_high": 0.6,
           "bin_low": 0.5,
-          "count": 0,
-          "empirical_failure_rate": 0.0,
-          "mean_predicted_risk": 0.0
+          "count": 122,
+          "empirical_failure_rate": 0.2540983606557377,
+          "mean_predicted_risk": 0.5400332975063231
         },
         {
           "bin_high": 0.7,
@@ -121,16 +121,16 @@
         {
           "bin_high": 0.8,
           "bin_low": 0.7,
-          "count": 4,
-          "empirical_failure_rate": 0.25,
-          "mean_predicted_risk": 0.7887946317942122
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
         },
         {
           "bin_high": 0.9,
           "bin_low": 0.8,
-          "count": 2,
-          "empirical_failure_rate": 0.5,
-          "mean_predicted_risk": 0.8188500390896545
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
         },
         {
           "bin_high": 1.0,
@@ -140,6 +140,189 @@
           "mean_predicted_risk": 0.0
         }
       ]
+    },
+    "variants": {
+      "metadata_oracle_risk": {
+        "calibration_threshold_recomputed": 0.8,
+        "ok": true,
+        "test_metrics": {
+          "auprc": 0.8395602390070919,
+          "auroc": 0.9301346801346801,
+          "brier": 0.1461004239041536,
+          "coverage_at_threshold": 0.8208955223880597,
+          "ece": 0.26378429406146553,
+          "examples": 201,
+          "failure_rate_attempted": 0.06060606060606061,
+          "nll": 0.47092852830136567,
+          "positive_rate": 0.1791044776119403,
+          "reliability_bins": [
+            {
+              "bin_high": 0.1,
+              "bin_low": 0.0,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.2,
+              "bin_low": 0.1,
+              "count": 2,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.19379447142954026
+            },
+            {
+              "bin_high": 0.3,
+              "bin_low": 0.2,
+              "count": 82,
+              "empirical_failure_rate": 0.012195121951219513,
+              "mean_predicted_risk": 0.2544758902238219
+            },
+            {
+              "bin_high": 0.4,
+              "bin_low": 0.3,
+              "count": 54,
+              "empirical_failure_rate": 0.07407407407407407,
+              "mean_predicted_risk": 0.3499600575252706
+            },
+            {
+              "bin_high": 0.5,
+              "bin_low": 0.4,
+              "count": 7,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.43259145723730436
+            },
+            {
+              "bin_high": 0.6,
+              "bin_low": 0.5,
+              "count": 8,
+              "empirical_failure_rate": 0.375,
+              "mean_predicted_risk": 0.5762589235999398
+            },
+            {
+              "bin_high": 0.7,
+              "bin_low": 0.6,
+              "count": 8,
+              "empirical_failure_rate": 0.125,
+              "mean_predicted_risk": 0.6268399378720161
+            },
+            {
+              "bin_high": 0.8,
+              "bin_low": 0.7,
+              "count": 4,
+              "empirical_failure_rate": 0.25,
+              "mean_predicted_risk": 0.7872669227924199
+            },
+            {
+              "bin_high": 0.9,
+              "bin_low": 0.8,
+              "count": 9,
+              "empirical_failure_rate": 0.2222222222222222,
+              "mean_predicted_risk": 0.8331609450476513
+            },
+            {
+              "bin_high": 1.0,
+              "bin_low": 0.9,
+              "count": 27,
+              "empirical_failure_rate": 0.8888888888888888,
+              "mean_predicted_risk": 0.9469533618423024
+            }
+          ]
+        },
+        "threshold": 0.8
+      },
+      "structured_progress_risk": {
+        "calibration_threshold_recomputed": 0.5905054457889825,
+        "ok": true,
+        "test_metrics": {
+          "auprc": 0.29714477329086525,
+          "auroc": 0.7015151515151515,
+          "brier": 0.23772062517287326,
+          "coverage_at_threshold": 1.0,
+          "ece": 0.31481135433241586,
+          "examples": 201,
+          "failure_rate_attempted": 0.1791044776119403,
+          "nll": 0.6678673644756632,
+          "positive_rate": 0.1791044776119403,
+          "reliability_bins": [
+            {
+              "bin_high": 0.1,
+              "bin_low": 0.0,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.2,
+              "bin_low": 0.1,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.3,
+              "bin_low": 0.2,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.4,
+              "bin_low": 0.3,
+              "count": 34,
+              "empirical_failure_rate": 0.029411764705882353,
+              "mean_predicted_risk": 0.3747623961477098
+            },
+            {
+              "bin_high": 0.5,
+              "bin_low": 0.4,
+              "count": 45,
+              "empirical_failure_rate": 0.08888888888888889,
+              "mean_predicted_risk": 0.4589132990227119
+            },
+            {
+              "bin_high": 0.6,
+              "bin_low": 0.5,
+              "count": 122,
+              "empirical_failure_rate": 0.2540983606557377,
+              "mean_predicted_risk": 0.5400332975063231
+            },
+            {
+              "bin_high": 0.7,
+              "bin_low": 0.6,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.8,
+              "bin_low": 0.7,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 0.9,
+              "bin_low": 0.8,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            },
+            {
+              "bin_high": 1.0,
+              "bin_low": 0.9,
+              "count": 0,
+              "empirical_failure_rate": 0.0,
+              "mean_predicted_risk": 0.0
+            }
+          ]
+        },
+        "threshold": 0.5905054457889825
+      },
+      "vision_language_risk": {
+        "blocker": "Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results.",
+        "ok": false,
+        "status": "skipped"
+      }
     }
   },
   "ok": true,
@@ -147,23 +330,36 @@
     "abstained": 9,
     "by_mode": {
       "adaptive_chunk_openpi": 6,
-      "direct_openpi": 33,
+      "direct_openpi": 993,
       "selective_openpi": 9
     },
     "by_stressor": {
-      "action_noise": 6,
-      "none": 12,
-      "occlusion": 30
+      "action_noise": 216,
+      "none": 412,
+      "occlusion": 380
+    },
+    "by_stressor_severity": {
+      "action_noise:0.20": 70,
+      "action_noise:0.40": 70,
+      "action_noise:0.60": 70,
+      "action_noise:0.70": 6,
+      "none:0.00": 412,
+      "occlusion:0.20": 70,
+      "occlusion:0.40": 70,
+      "occlusion:0.60": 70,
+      "occlusion:0.70": 6,
+      "occlusion:0.80": 70,
+      "occlusion:1.00": 94
     },
     "by_suite": {
-      "libero_10": 1,
-      "libero_goal": 1,
-      "libero_object": 1,
-      "libero_spatial": 45
+      "libero_10": 101,
+      "libero_goal": 101,
+      "libero_object": 101,
+      "libero_spatial": 705
     },
-    "episodes": 48,
-    "successes": 23,
-    "timeouts": 16
+    "episodes": 1008,
+    "successes": 819,
+    "timeouts": 180
   },
   "split_overlap": {
     "calibration_test": [],
@@ -171,15 +367,23 @@
     "train_test": []
   },
   "split_sizes": {
-    "calibration": 6,
-    "test": 6,
-    "train": 18
+    "calibration": 197,
+    "test": 201,
+    "train": 595
   },
-  "summary_threshold": 0.8,
+  "summary_threshold": 0.5905054457889825,
   "training_input_paths": [
     "datasets/openpi_libero_rollouts/openpi_rollouts_10094.jsonl",
     "datasets/openpi_libero_rollouts/openpi_rollouts_10095.jsonl",
-    "datasets/openpi_libero_rollouts/openpi_rollouts_10096.jsonl"
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10096.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10099.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10120.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10121.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10127.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10128.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10129.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10130.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10131.jsonl"
   ],
   "training_modes": [
     "direct_openpi"

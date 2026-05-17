@@ -14,8 +14,9 @@ Current status:
 - OpenPI/LIBERO setup: OpenPI is cloned under ignored `external/`, the LIBERO client venv is reproducible through SLURM, and strict setup smoke has passed on a `dualcard` GPU node.
 - Real OpenPI/LIBERO rollout path: added a Python 3.8-compatible single-task evaluator that starts from OpenPI's upstream LIBERO evaluator and emits risk-ready JSONL logs.
 - First real OpenPI policy smoke: `pi05_libero` completed one LIBERO-Spatial task-0 episode successfully on `dualcard` SLURM job `10092`; this is a smoke result, not a benchmark success-rate claim.
-- Direct OpenPI baselines: `libero_spatial` tasks `0,1,2` reached `9/9` success with no stressor, `10/12` under mixed moderate occlusion/action-noise stress, and `1/9` under severe occlusion. These runs produce the first real failure regime for risk modeling.
-- OpenPI risk critic: trained a transparent calibrated logistic baseline on `30` OpenPI/LIBERO episodes with a `20/10` success/failure split. This is an engineering checkpoint; fixed task priors remain strong and richer image/language/world-model features are the next research step.
+- Scaled OpenPI/LIBERO direct rollouts: `993` direct-policy episodes are logged for risk training, including `400` new nominal episodes across `libero_spatial`, `libero_object`, `libero_goal`, and `libero_10`, plus `560` new stress episodes over occlusion/action-noise severity sweeps.
+- OpenPI risk critics: trained audited `metadata_oracle_risk` and `structured_progress_risk` logistic ablations. The metadata-aware diagnostic model reaches test AUROC `0.930` / AUPRC `0.840`; the deployable structured/progress model reaches AUROC `0.702` / AUPRC `0.297` without hidden stressor metadata. The fixed task prior remains competitive, so the report does not overclaim a learned-risk win.
+- VLM/world-model path: image-frame logging is wired behind `SAVE_IMAGES=1`, and the structured model already uses early rollout progress features as a lightweight transition/progress signal. Frozen VLM embeddings and learned predictive dynamics are tracked as next ablations, not claimed as completed results.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
 
@@ -26,12 +27,12 @@ The main project direction is to wrap OpenPI `pi05_libero` execution with calibr
 | Component | Role in this project | Status |
 | --- | --- | --- |
 | [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed, first policy rollout passed |
-| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | installed locally, client venv smoke passed, first episode log/video collected |
-| VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | planned next; OpenPI already provides the VLA policy backbone, but the current risk critic is structured/log-only |
-| World model features | Learned progress/transition predictor from rollout logs for no-progress and likely-failure signals | planned next; current runner logs no-progress, action smoothness, rewards, and per-step images needed for this model |
-| [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned ablation, not required for first OpenPI result |
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | active; 993 direct OpenPI episodes logged across suites/stressors |
+| VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | data path implemented with `SAVE_IMAGES=1`; embedding model not yet trained or claimed |
+| World model features | Progress/transition signals for no-progress and likely-timeout risk | lightweight prefix statistics active; learned predictive dynamics planned |
+| [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned export/baseline, not used in current metrics |
 
-Execution modes to evaluate once OpenPI smoke passes:
+Execution and supervision modes:
 
 ```text
 direct_openpi
@@ -56,6 +57,9 @@ sbatch slurm/openpi_libero_smoke.sbatch
 sbatch slurm/openpi_libero_official_smoke.sbatch
 SUITES="libero_spatial libero_goal" TASK_IDS="0 1 2" NUM_TRIALS=3 sbatch slurm/openpi_libero_rollouts.sbatch
 SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=3 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
+SUITES="libero_spatial libero_object libero_goal libero_10" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=10 STRESSORS="none" sbatch slurm/openpi_libero_rollouts.sbatch
+SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=7 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 sbatch slurm/openpi_libero_rollouts.sbatch
+SAVE_IMAGES=1 SUITES="libero_spatial" TASK_IDS="0" NUM_TRIALS=1 STRESSORS="none" sbatch slurm/openpi_libero_rollouts.sbatch
 MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=2 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
@@ -78,6 +82,13 @@ Current OpenPI reports:
 - [Selective supervisor rollout summary](reports/openpi_libero_rollout_summary_10097.json)
 - [Adaptive supervisor rollout summary](reports/openpi_libero_rollout_summary_10098.json)
 - [Cross-suite direct rollout summary](reports/openpi_libero_rollout_summary_10099.json)
+- [Scaled nominal direct summary A](reports/openpi_libero_rollout_summary_10120.json)
+- [Scaled nominal direct summary B](reports/openpi_libero_rollout_summary_10121.json)
+- [Stress severity 0.2 summary](reports/openpi_libero_rollout_summary_10127.json)
+- [Stress severity 0.4 summary](reports/openpi_libero_rollout_summary_10128.json)
+- [Stress severity 0.6 summary](reports/openpi_libero_rollout_summary_10129.json)
+- [Stress severity 0.8 summary](reports/openpi_libero_rollout_summary_10130.json)
+- [Stress severity 1.0 summary](reports/openpi_libero_rollout_summary_10131.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)
@@ -253,18 +264,18 @@ reports/       tracked summaries and final report assets
 
 ## Limitations
 
-- The current OpenPI/LIBERO result is a small rollout study, not a benchmark-scale manipulation evaluation.
+- The current OpenPI/LIBERO result is a risk-supervision study, not a benchmark-scale OpenPI leaderboard claim.
 - `oracle_risk` uses the toy simulator's ground-truth risk rules. The real OpenPI risk model is still a transparent logistic baseline.
-- The current OpenPI risk features include stressor metadata for controlled stress testing. The professional research path is to replace that with directly observed VLM/image and world-model progress features.
-- OpenPI/LIBERO setup smoke and the one-episode official policy smoke are passing, and small direct-policy baselines are logged, but no benchmark-level OpenPI success-rate result is claimed yet.
-- No robosuite environment, learned manipulation policy, robosuite risk critic, or video demo is implemented yet.
+- The `metadata_oracle_risk` OpenPI model includes stressor metadata and is diagnostic only. The deployable `structured_progress_risk` model excludes hidden stressor metadata.
+- The current structured risk model is useful but not decisive: it improves AUROC over fixed task priors, while fixed priors remain stronger on AUPRC/Brier in the current split.
+- VLM embeddings and learned world-model dynamics are planned ablations; the repo now logs the data needed for them but does not claim those results yet.
+- No custom robosuite environment, learned manipulation policy, or neural robosuite risk critic is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
-1. Finish selective/adaptive supervisor comparisons under severe occlusion and report coverage-aware outcomes.
-2. Expand direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
-3. Add frozen VLM image/language embeddings as a state-conditioned risk ablation.
-4. Train a lightweight world-model/progress predictor and compare it to structured-only risk features.
-5. Compare OpenPI-only, OpenPI plus risk supervisor, fixed task prior, and LeRobot-format/export baselines.
-6. Keep toy oracle and learned-risk gates as regression tests.
+1. Run runtime selective/adaptive supervisor comparisons using the full 993-episode trained risk summary.
+2. Add frozen VLM image/language embeddings from `SAVE_IMAGES=1` rollout frames and compare them against fixed task priors.
+3. Train a lightweight predictive progress/world-model head and compare it to prefix-statistics-only risk features.
+4. Add a LeRobot-format export or baseline once the dataset contract is stable.
+5. Keep toy oracle and learned-risk gates as regression tests.

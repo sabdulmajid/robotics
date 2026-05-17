@@ -100,6 +100,58 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
     compare_mapping("metrics", metrics, summary.get("metrics", {}), failures, tolerance)
     compare_mapping("baselines", baseline_metrics, summary.get("baselines", {}), failures, tolerance)
 
+    variant_checks: dict[str, Any] = {}
+    for variant_name, variant in summary.get("model_variants", {}).items():
+        if not isinstance(variant, Mapping) or not variant.get("ok"):
+            variant_checks[variant_name] = {
+                "ok": False,
+                "status": variant.get("status", "blocked") if isinstance(variant, Mapping) else "invalid",
+                "blocker": variant.get("blocker") if isinstance(variant, Mapping) else "Variant entry is not a mapping",
+            }
+            continue
+        variant_probs_by_split = {name: predict_from_summary(variant, items) for name, items in splits.items()}
+        variant_threshold = float(variant["calibration"]["threshold"])
+        variant_calibration_threshold = choose_threshold(
+            labels_by_split["calibration"],
+            variant_probs_by_split["calibration"],
+        )
+        if not close(variant_calibration_threshold, variant_threshold, tolerance):
+            failures.append(
+                f"{variant_name} threshold mismatch: "
+                f"recomputed from calibration={variant_calibration_threshold}, summary={variant_threshold}"
+            )
+        variant_metrics = {}
+        variant_baselines = {"global_prior": {}, "fixed_task_prior": {}}
+        for split_name, items in splits.items():
+            labels = labels_by_split[split_name]
+            probs = variant_probs_by_split[split_name]
+            variant_metrics[split_name] = binary_risk_metrics(labels, probs, threshold=variant_threshold)
+            variant_metrics[split_name]["reliability_bins"] = reliability_bins(labels, probs)
+            variant_baselines["global_prior"][split_name] = binary_risk_metrics(
+                labels,
+                [global_prior for _ in items],
+                threshold=variant_threshold,
+            )
+            variant_baselines["fixed_task_prior"][split_name] = binary_risk_metrics(
+                labels,
+                [task_priors.get((example.suite, example.task_id), global_prior) for example in items],
+                threshold=variant_threshold,
+            )
+        compare_mapping(f"model_variants.{variant_name}.metrics", variant_metrics, variant.get("metrics", {}), failures, tolerance)
+        compare_mapping(
+            f"model_variants.{variant_name}.baselines",
+            variant_baselines,
+            variant.get("baselines", {}),
+            failures,
+            tolerance,
+        )
+        variant_checks[variant_name] = {
+            "ok": True,
+            "threshold": variant_threshold,
+            "calibration_threshold_recomputed": variant_calibration_threshold,
+            "test_metrics": variant_metrics.get("test", {}),
+        }
+
     global_test = baseline_metrics["global_prior"]["test"]
     global_probs = [global_prior for _ in splits["test"]]
     if len(set(global_probs)) <= 1 and global_test["auprc"] is not None:
@@ -126,6 +178,7 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
             "class_balance": recomputed_balance,
             "test_metrics": metrics.get("test", {}),
             "test_baselines": {name: values.get("test", {}) for name, values in baseline_metrics.items()},
+            "variants": variant_checks,
         },
     }
 
@@ -140,6 +193,7 @@ def summarize_raw_episodes(episodes: Iterable[Mapping[str, Any]]) -> dict[str, A
     by_mode: dict[str, int] = {}
     by_suite: dict[str, int] = {}
     by_stressor: dict[str, int] = {}
+    by_stressor_severity: dict[str, int] = {}
     success = 0
     timeout = 0
     abstained = 0
@@ -147,9 +201,13 @@ def summarize_raw_episodes(episodes: Iterable[Mapping[str, Any]]) -> dict[str, A
         mode = str(episode.get("mode", "unknown"))
         suite = str(episode.get("libero_suite", episode.get("suite", "unknown")))
         stressor = str(episode.get("stressor_name", "unknown"))
+        stressor_params = episode.get("stressor_params", {})
+        severity = float(stressor_params.get("severity", episode.get("metadata", {}).get("stressor_severity", 0.0)))
         by_mode[mode] = by_mode.get(mode, 0) + 1
         by_suite[suite] = by_suite.get(suite, 0) + 1
         by_stressor[stressor] = by_stressor.get(stressor, 0) + 1
+        severity_key = f"{stressor}:{severity:.2f}"
+        by_stressor_severity[severity_key] = by_stressor_severity.get(severity_key, 0) + 1
         success += int(bool(episode.get("success", False)))
         timeout += int(bool(episode.get("timeout", False)))
         abstained += int(str(episode.get("failure_label", "")) == "abstained")
@@ -161,6 +219,7 @@ def summarize_raw_episodes(episodes: Iterable[Mapping[str, Any]]) -> dict[str, A
         "by_mode": by_mode,
         "by_suite": by_suite,
         "by_stressor": by_stressor,
+        "by_stressor_severity": by_stressor_severity,
     }
 
 
@@ -172,8 +231,10 @@ def predict_from_summary(summary: Mapping[str, Any], examples) -> list[float]:
     temperature = max(float(summary["calibration"]["temperature"]), 1e-6)
     probs = []
     for example in examples:
+        feature_lookup = dict(zip(example.feature_names, example.features))
         logit = 0.0
-        for value, weight, mu, sigma in zip(example.features, weights, mean, std):
+        for name, weight, mu, sigma in zip(names, weights, mean, std):
+            value = feature_lookup[name]
             logit += weight * ((float(value) - mu) / sigma)
         probs.append(sigmoid(logit / temperature))
     return probs

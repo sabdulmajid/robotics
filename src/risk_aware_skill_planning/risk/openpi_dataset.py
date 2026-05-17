@@ -145,6 +145,10 @@ def example_from_episode(episode: Mapping[str, Any], *, source_path: str, prefix
             "terminal_label": episode.get("terminal_label", episode.get("terminal_reason")),
             "failure_label": episode.get("failure_label"),
             "episode_length": episode.get("episode_length", len(episode.get("steps", ()))) ,
+            "mode": episode.get("mode"),
+            "cuda_device_name": episode.get("cuda_device_name", episode.get("metadata", {}).get("cuda_device_name")),
+            "video_path": episode.get("video_path", episode.get("metadata", {}).get("video_path")),
+            "first_image_path": _first_image_path(episode.get("steps", ())),
         },
     )
 
@@ -159,7 +163,7 @@ def split_examples(
     for label in (0, 1):
         items = sorted(
             [example for example in examples if example.label_failure == label],
-            key=lambda example: (example.run_id, example.episode_id),
+            key=_stable_split_key,
         )
         n = len(items)
         if n == 0:
@@ -177,7 +181,7 @@ def split_examples(
         splits["train"].extend(items[:train_end])
         splits["calibration"].extend(items[train_end:calibration_end])
         splits["test"].extend(items[calibration_end:])
-    return {name: sorted(items, key=lambda example: (example.run_id, example.episode_id)) for name, items in splits.items()}
+    return {name: sorted(items, key=_stable_split_key) for name, items in splits.items()}
 
 
 def class_balance(examples: Sequence[OpenPIRiskExample]) -> dict[str, float | int]:
@@ -199,9 +203,22 @@ def _hash_to_unit(value: str) -> float:
     return (number / 0xFFFFFFFF) * 2.0 - 1.0
 
 
+def _stable_split_key(example: OpenPIRiskExample) -> str:
+    key = f"{example.run_id}:{example.episode_id}"
+    return hashlib.sha1(key.encode("utf-8")).hexdigest()
+
+
 def _safe_mean(values: Sequence[float]) -> float:
     return mean(values) if values else 0.0
 
 
 def _float(value: Any) -> float:
     return 0.0 if value is None else float(value)
+
+
+def _first_image_path(steps: Iterable[Mapping[str, Any]]) -> str | None:
+    for step in steps:
+        image_path = step.get("image_path")
+        if image_path:
+            return str(image_path)
+    return None

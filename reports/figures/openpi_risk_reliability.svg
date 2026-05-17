@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="460" viewBox="0 0 720 460">
+<rect width="100%" height="100%" fill="white"/>
+<text x="360.0" y="30.0" font-size="18" text-anchor="middle">OpenPI structured_progress_risk Reliability</text>
+<line x1="76" y1="384" x2="396" y2="384" stroke="#111"/>
+<line x1="76" y1="64" x2="76" y2="384" stroke="#111"/>
+<line x1="76" y1="384" x2="396" y2="64" stroke="#999" stroke-dasharray="4 4"/>
+<line x1="76.0" y1="384" x2="76.0" y2="389" stroke="#111"/>
+<line x1="71" y1="384.0" x2="76" y2="384.0" stroke="#111"/>
+<text x="76.0" y="406.0" font-size="11" text-anchor="middle">0.0</text>
+<text x="66.0" y="388.0" font-size="11" text-anchor="end">0.0</text>
+<line x1="140.0" y1="384" x2="140.0" y2="389" stroke="#111"/>
+<line x1="71" y1="320.0" x2="76" y2="320.0" stroke="#111"/>
+<text x="140.0" y="406.0" font-size="11" text-anchor="middle">0.2</text>
+<text x="66.0" y="324.0" font-size="11" text-anchor="end">0.2</text>
+<line x1="204.0" y1="384" x2="204.0" y2="389" stroke="#111"/>
+<line x1="71" y1="256.0" x2="76" y2="256.0" stroke="#111"/>
+<text x="204.0" y="406.0" font-size="11" text-anchor="middle">0.4</text>
+<text x="66.0" y="260.0" font-size="11" text-anchor="end">0.4</text>
+<line x1="268.0" y1="384" x2="268.0" y2="389" stroke="#111"/>
+<line x1="71" y1="192.0" x2="76" y2="192.0" stroke="#111"/>
+<text x="268.0" y="406.0" font-size="11" text-anchor="middle">0.6</text>
+<text x="66.0" y="196.0" font-size="11" text-anchor="end">0.6</text>
+<line x1="332.0" y1="384" x2="332.0" y2="389" stroke="#111"/>
+<line x1="71" y1="128.0" x2="76" y2="128.0" stroke="#111"/>
+<text x="332.0" y="406.0" font-size="11" text-anchor="middle">0.8</text>
+<text x="66.0" y="132.0" font-size="11" text-anchor="end">0.8</text>
+<line x1="396.0" y1="384" x2="396.0" y2="389" stroke="#111"/>
+<line x1="71" y1="64.0" x2="76" y2="64.0" stroke="#111"/>
+<text x="396.0" y="406.0" font-size="11" text-anchor="middle">1.0</text>
+<text x="66.0" y="68.0" font-size="11" text-anchor="end">1.0</text>
+<rect x="174.0" y="374.6" width="28.0" height="9.4" fill="#90cdf4" fill-opacity="0.35"/>
+<circle cx="195.9" cy="374.6" r="5.4" fill="#2563eb" fill-opacity="0.82"/>
+<rect x="206.0" y="355.6" width="28.0" height="28.4" fill="#90cdf4" fill-opacity="0.35"/>
+<circle cx="222.9" cy="355.6" r="5.8" fill="#2563eb" fill-opacity="0.82"/>
+<rect x="238.0" y="302.7" width="28.0" height="81.3" fill="#90cdf4" fill-opacity="0.35"/>
+<circle cx="248.8" cy="302.7" r="8.9" fill="#2563eb" fill-opacity="0.82"/>
+<text x="236.0" y="432.0" font-size="13" text-anchor="middle">Predicted failure risk</text>
+<text x="18" y="224.0" font-size="13" text-anchor="middle" transform="rotate(-90 18 224.0)">Empirical failure rate</text>
+<text x="440.0" y="98.0" font-size="12" text-anchor="start">Dashed line: perfect calibration</text>
+<text x="440.0" y="122.0" font-size="12" text-anchor="start">Circle size: bin count</text>
+</svg>

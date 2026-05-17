@@ -1,0 +1,17 @@
+{
+  "by_mode": {
+    "direct_openpi": {
+      "episodes": 200,
+      "mean_episode_steps": 190.58,
+      "success_rate": 0.96,
+      "successes": 192,
+      "terminal_labels": {
+        "success": 192,
+        "timeout": 8
+      },
+      "timeout_rate": 0.04,
+      "timeouts": 8
+    }
+  },
+  "episodes": 200
+}
