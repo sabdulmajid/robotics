@@ -17,7 +17,8 @@ Current status:
 - Scaled OpenPI/LIBERO direct rollouts: `993` direct-policy episodes are logged for risk training, including `400` new nominal episodes across `libero_spatial`, `libero_object`, `libero_goal`, and `libero_10`, plus `560` new stress episodes over occlusion/action-noise severity sweeps.
 - OpenPI risk critics: trained audited `metadata_oracle_risk`, `structured_progress_risk`, and frozen-SigLIP `vision_language_risk` logistic ablations. The diagnostic metadata-aware model reaches test AUROC `0.930` / AUPRC `0.840`; the deployable structured/progress model reaches AUROC `0.702` / AUPRC `0.297`; the observed-image SigLIP ablation reaches AUROC `0.905` / AUPRC `0.811` without hidden stressor metadata.
 - Supervisor comparisons: selective execution, adaptive chunking, no-progress early abort, and adaptive-plus-abort are reported with coverage, failure, expected utility, policy-query overhead, and bootstrap confidence intervals. Adaptive/abort rows are offline counterfactuals from logged episodes unless explicitly marked as runtime rollouts.
-- VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and evaluated as `vision_language_risk`; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
+- Runtime VLM supervisor: `vision_language_risk_selective` now runs inside the real OpenPI/LIBERO evaluator. On `630` held-out runtime episodes, runtime SigLIP reduces attempted failure from `0.305` for direct OpenPI to `0.126`, but lowers coverage to `0.681` and completion to `0.595` because the current threshold is conservative.
+- VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and computed at runtime for selective rejection; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
 
@@ -29,8 +30,8 @@ The main project direction is to wrap OpenPI `pi05_libero` execution with calibr
 | --- | --- | --- |
 | [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed, first policy rollout passed |
 | [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | active; 993 direct OpenPI episodes logged across suites/stressors |
-| VLM/image features | Frozen SigLIP image embeddings for risk prediction from logged RGB frames/videos and task context | active offline ablation; 993 rollout videos embedded with `google/siglip-base-patch16-224` |
-| World model features | Progress/transition signals for no-progress and likely-timeout risk | lightweight prefix statistics active; learned predictive dynamics planned |
+| VLM/image features | Frozen SigLIP image embeddings for risk prediction from logged RGB frames/videos and task context | active offline and runtime ablation with `google/siglip-base-patch16-224` |
+| World model features | Progress/transition signals for no-progress and likely-timeout risk | 10-step prefix statistics active; learned predictive dynamics planned |
 | [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned export/baseline, not used in current metrics |
 
 Execution and supervision modes:
@@ -42,9 +43,11 @@ learned_risk_openpi
 selective_openpi
 adaptive_chunk_openpi
 no_progress_replan
+fixed_task_prior_selective
+vision_language_risk_selective
 ```
 
-The key intervention is `adaptive_chunk_openpi`: low predicted risk uses the normal action horizon, medium/high risk shortens the action horizon and re-queries OpenPI more often, and extreme/no-progress cases abstain or stop early.
+The current online intervention is `vision_language_risk_selective`: it uses a runtime RGB frame plus early progress features to reject high-risk executions before the full episode is attempted. `adaptive_chunk_openpi` remains available as a lower-level control experiment: low predicted risk uses the normal action horizon, medium/high risk shortens the action horizon and re-queries OpenPI more often, and extreme/no-progress cases abstain or stop early.
 
 Current OpenPI/LIBERO commands:
 
@@ -63,11 +66,14 @@ SUITES="libero_spatial libero_object libero_goal libero_10" TASK_IDS="0 1 2 3 4 
 SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=7 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 sbatch slurm/openpi_libero_rollouts.sbatch
 SAVE_IMAGES=1 SUITES="libero_spatial" TASK_IDS="0" NUM_TRIALS=1 STRESSORS="none" sbatch slurm/openpi_libero_rollouts.sbatch
 MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=2 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
+MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion" STRESSOR_SEVERITY=0.8 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl'
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 The official smoke starts OpenPI's policy server and runs one real `pi05_libero` episode through the filtered LIBERO evaluator.
 The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training. The SigLIP extraction script converts the existing rollout videos into ignored frozen embedding artifacts under `outputs/`, and the risk summary can be passed back into the same rollout script for `selective_openpi` and `adaptive_chunk_openpi` supervisor evaluations.
+Runtime `vision_language_risk_selective` captures a post-stressor RGB frame, computes a frozen SigLIP embedding, combines it with the observable 10-step progress prefix, and abstains when predicted failure risk exceeds the calibration threshold.
 
 Tracked first-rollout artifacts:
 
@@ -91,6 +97,7 @@ Current OpenPI reports:
 - [Stress severity 0.6 summary](reports/openpi_libero_rollout_summary_10129.json)
 - [Stress severity 0.8 summary](reports/openpi_libero_rollout_summary_10130.json)
 - [Stress severity 1.0 summary](reports/openpi_libero_rollout_summary_10131.json)
+- [Runtime SigLIP supervisor summary](reports/openpi_runtime_siglip_eval_summary.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)

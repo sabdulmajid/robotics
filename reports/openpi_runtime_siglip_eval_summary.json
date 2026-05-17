@@ -1,0 +1,178 @@
+{
+  "by_stressor": {
+    "action_noise": 180,
+    "none": 90,
+    "occlusion": 360
+  },
+  "by_stressor_severity": {
+    "action_noise:0.40": 90,
+    "action_noise:0.60": 90,
+    "none:0.00": 90,
+    "occlusion:0.40": 90,
+    "occlusion:0.60": 90,
+    "occlusion:0.80": 90,
+    "occlusion:1.00": 90
+  },
+  "by_suite": {
+    "libero_spatial": 630
+  },
+  "episodes": 630,
+  "gpu_models": {
+    "NVIDIA RTX A4500": 630
+  },
+  "input_paths": [
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10133.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10134.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10135.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10136.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10137.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10138.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10139.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10140.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10141.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10142.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10143.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10144.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10145.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10146.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10147.jsonl"
+  ],
+  "modes": {
+    "direct_openpi": {
+      "abstention_rate": 0.0,
+      "ci95": {
+        "abstention_rate": {
+          "high": 0.0,
+          "low": 0.0,
+          "mean": 0.0,
+          "samples": 500
+        },
+        "expected_utility": {
+          "high": 0.6289457142857142,
+          "low": 0.44182285714285713,
+          "mean": 0.5313609838095238,
+          "samples": 500
+        },
+        "failure_rate": {
+          "high": 0.3619047619047619,
+          "low": 0.23809523809523808,
+          "mean": 0.30274285714285715,
+          "samples": 500
+        },
+        "task_completion_rate": {
+          "high": 0.7619047619047619,
+          "low": 0.638095238095238,
+          "mean": 0.6972571428571429,
+          "samples": 500
+        },
+        "timeout_rate": {
+          "high": 0.3619047619047619,
+          "low": 0.23809523809523808,
+          "mean": 0.30274285714285715,
+          "samples": 500
+        }
+      },
+      "coverage": 1.0,
+      "episodes": 210,
+      "expected_utility": 0.5283052380952381,
+      "failure_rate": 0.3047619047619048,
+      "failure_rate_attempted": 0.3047619047619048,
+      "mean_policy_queries": 29.385714285714286,
+      "mean_runtime_risk_compute_seconds": 0.0,
+      "policy_query_overhead_vs_direct": 1.0,
+      "task_completion_rate": 0.6952380952380952,
+      "timeout_rate": 0.3047619047619048
+    },
+    "fixed_task_prior_selective": {
+      "abstention_rate": 0.0,
+      "ci95": {
+        "abstention_rate": {
+          "high": 0.0,
+          "low": 0.0,
+          "mean": 0.0,
+          "samples": 500
+        },
+        "expected_utility": {
+          "high": 0.6074866666666666,
+          "low": 0.4131709523809524,
+          "mean": 0.515259259047619,
+          "samples": 500
+        },
+        "failure_rate": {
+          "high": 0.3761904761904762,
+          "low": 0.2523809523809524,
+          "mean": 0.3133142857142857,
+          "samples": 500
+        },
+        "task_completion_rate": {
+          "high": 0.7476190476190476,
+          "low": 0.6190476190476191,
+          "mean": 0.6866857142857142,
+          "samples": 500
+        },
+        "timeout_rate": {
+          "high": 0.3761904761904762,
+          "low": 0.2523809523809524,
+          "mean": 0.3133142857142857,
+          "samples": 500
+        }
+      },
+      "coverage": 1.0,
+      "episodes": 210,
+      "expected_utility": 0.5137838095238095,
+      "failure_rate": 0.3142857142857143,
+      "failure_rate_attempted": 0.3142857142857143,
+      "mean_policy_queries": 29.86190476190476,
+      "mean_runtime_risk_compute_seconds": 1.1221567789713542e-05,
+      "policy_query_overhead_vs_direct": 1.0162048290390535,
+      "task_completion_rate": 0.6857142857142857,
+      "timeout_rate": 0.3142857142857143
+    },
+    "vision_language_risk_selective": {
+      "abstention_rate": 0.319047619047619,
+      "ci95": {
+        "abstention_rate": {
+          "high": 0.38095238095238093,
+          "low": 0.2523809523809524,
+          "mean": 0.31715238095238096,
+          "samples": 500
+        },
+        "expected_utility": {
+          "high": 0.5721404761904763,
+          "low": 0.3991109523809524,
+          "mean": 0.48275632571428573,
+          "samples": 500
+        },
+        "failure_rate": {
+          "high": 0.12857142857142856,
+          "low": 0.047619047619047616,
+          "mean": 0.08533333333333333,
+          "samples": 500
+        },
+        "task_completion_rate": {
+          "high": 0.6714285714285714,
+          "low": 0.5333333333333333,
+          "mean": 0.5975142857142857,
+          "samples": 500
+        },
+        "timeout_rate": {
+          "high": 0.12857142857142856,
+          "low": 0.047619047619047616,
+          "mean": 0.08533333333333333,
+          "samples": 500
+        }
+      },
+      "coverage": 0.680952380952381,
+      "episodes": 210,
+      "expected_utility": 0.47991904761904763,
+      "failure_rate": 0.08571428571428572,
+      "failure_rate_attempted": 0.1258741258741259,
+      "mean_policy_queries": 17.538095238095238,
+      "mean_runtime_risk_compute_seconds": 0.00010306153978620256,
+      "policy_query_overhead_vs_direct": 0.5968238535083454,
+      "task_completion_rate": 0.5952380952380952,
+      "timeout_rate": 0.08571428571428572
+    }
+  },
+  "ok": true
+}

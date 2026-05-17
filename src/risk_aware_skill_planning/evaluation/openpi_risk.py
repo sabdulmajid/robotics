@@ -302,6 +302,14 @@ def _fit_openpi_variant(
     prediction_rows = {}
     global_prior = _mean_label(projected_splits["train"])
     task_priors = _task_priors(projected_splits["train"], default=global_prior)
+    calibration_fixed_task_probs = [
+        _lookup_task_prior(task_priors, example, global_prior)
+        for example in calibration_items
+    ]
+    baseline_thresholds = {
+        "global_prior": choose_threshold(calibration_labels, [global_prior for _ in calibration_items]),
+        "fixed_task_prior": choose_threshold(calibration_labels, calibration_fixed_task_probs),
+    }
     for split_name, items in projected_splits.items():
         probs = predict_examples(calibrated, items)
         labels = [example.label_failure for example in items]
@@ -337,6 +345,12 @@ def _fit_openpi_variant(
         },
         "metrics": split_metrics,
         "baselines": baseline_metrics,
+        "baseline_thresholds": baseline_thresholds,
+        "global_prior": global_prior,
+        "fixed_task_priors": [
+            {"suite": suite, "task_id": task_id, "failure_prior": prior}
+            for (suite, task_id), prior in sorted(task_priors.items())
+        ],
         "baseline_coverage_curves": {
             "global_prior": _baseline_coverage_curves(projected_splits, global_prior=global_prior, task_priors=task_priors, mode="global"),
             "fixed_task_prior": _baseline_coverage_curves(projected_splits, global_prior=global_prior, task_priors=task_priors, mode="fixed_task"),

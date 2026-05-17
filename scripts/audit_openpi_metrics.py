@@ -23,6 +23,17 @@ from risk_aware_skill_planning.risk.openpi_vision import (
 
 AUDIT_START = "<!-- OPENPI_METRICS_AUDIT_START -->"
 AUDIT_END = "<!-- OPENPI_METRICS_AUDIT_END -->"
+STRESSOR_FEATURES = {
+    "stressor_severity",
+    "stressor_none",
+    "stressor_occlusion",
+    "stressor_action_noise",
+    "stressor_gaussian_noise",
+    "stressor_brightness",
+    "stressor_action_delay",
+    "stressor_action_precision",
+}
+ALLOWED_VISION_FRAME_SOURCES = {"video_first_frame", "runtime_initial_frame", "early_prefix_frame"}
 
 
 def main() -> int:
@@ -177,6 +188,7 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
                 "Global-prior AUPRC tie handling is suspect: "
                 f"auprc={global_test['auprc']}, positive_rate={expected_tied_auprc}"
             )
+    leakage_checks = audit_siglip_leakage(summary, failures)
 
     return {
         "ok": not failures,
@@ -196,6 +208,7 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
             "test_baselines": {name: values.get("test", {}) for name, values in baseline_metrics.items()},
             "variants": variant_checks,
         },
+        "leakage_checks": leakage_checks,
     }
 
 
@@ -287,6 +300,51 @@ def splits_for_payload(
     return output
 
 
+def audit_siglip_leakage(summary: Mapping[str, Any], failures: list[str]) -> dict[str, Any]:
+    vision = summary.get("model_variants", {}).get("vision_language_risk", {})
+    if not isinstance(vision, Mapping) or not vision.get("ok"):
+        return {"status": "skipped", "reason": "vision_language_risk is not trained"}
+    feature_names = list(vision.get("feature_names", []))
+    stressor_overlap = sorted(set(feature_names).intersection(STRESSOR_FEATURES))
+    if stressor_overlap:
+        failures.append(f"vision_language_risk includes stressor metadata features: {stressor_overlap}")
+    if vision.get("uses_stressor_metadata"):
+        failures.append("vision_language_risk is marked as using stressor metadata")
+    embedding_path = vision.get("embedding_path") or summary.get("vision_embedding_path")
+    frame_sources: dict[str, int] = {}
+    invalid_sources: list[str] = []
+    embedding_rows = 0
+    if embedding_path:
+        path = Path(str(embedding_path))
+        if not path.exists():
+            failures.append(f"Vision embedding path is missing during leakage audit: {path}")
+        else:
+            for row in read_jsonl(path):
+                embedding_rows += 1
+                source = str(row.get("frame_source", ""))
+                frame_sources[source] = frame_sources.get(source, 0) + 1
+                if source not in ALLOWED_VISION_FRAME_SOURCES:
+                    invalid_sources.append(source)
+    else:
+        failures.append("vision_language_risk is trained but has no embedding_path")
+    if invalid_sources:
+        failures.append(
+            "Vision embeddings include frame sources outside the initial/early-prefix allowlist: "
+            f"{sorted(set(invalid_sources))}"
+        )
+    return {
+        "status": "checked",
+        "embedding_path": str(embedding_path) if embedding_path else None,
+        "embedding_rows": embedding_rows,
+        "frame_sources": dict(sorted(frame_sources.items())),
+        "allowed_frame_sources": sorted(ALLOWED_VISION_FRAME_SOURCES),
+        "invalid_frame_source_count": len(invalid_sources),
+        "stressor_feature_overlap": stressor_overlap,
+        "uses_stressor_metadata": bool(vision.get("uses_stressor_metadata")),
+        "threshold_source": "calibration split; recomputed in variant metric audit",
+    }
+
+
 def task_priors_from_examples(examples, *, default: float) -> dict[tuple[str, int], float]:
     grouped: dict[tuple[str, int], list[int]] = {}
     for example in examples:
@@ -368,6 +426,7 @@ def upsert_report_audit(report_path: Path, audit: Mapping[str, Any], audit_path:
                     "calibration_threshold_recomputed": audit["calibration_threshold_recomputed"],
                     "global_prior_test_auprc": audit["global_prior_test_auprc"],
                     "global_prior_test_positive_rate": audit["global_prior_test_positive_rate"],
+                    "leakage_checks": audit.get("leakage_checks"),
                 },
                 indent=2,
                 sort_keys=True,

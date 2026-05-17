@@ -66,8 +66,10 @@ class OpenPIExperimentConfig:
         if self.mode not in {
             "direct_openpi",
             "fixed_task_prior",
+            "fixed_task_prior_selective",
             "learned_risk_openpi",
             "selective_openpi",
+            "vision_language_risk_selective",
             "adaptive_chunk_openpi",
             "no_progress_replan",
         }:

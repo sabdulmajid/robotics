@@ -53,6 +53,9 @@ RUNTIME_FEATURE_NAMES = (
     "prefix_no_progress_mean",
     "prefix_reward_sum",
 )
+VISION_SELECTIVE_MODE = "vision_language_risk_selective"
+FIXED_PRIOR_SELECTIVE_MODE = "fixed_task_prior_selective"
+SIGLIP_FEATURE_PREFIX = "siglip_image_"
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -106,6 +109,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--policy-config", default="pi05_libero")
     parser.add_argument("--checkpoint", default="gs://openpi-assets/checkpoints/pi05_libero/")
     parser.add_argument("--risk-summary")
+    parser.add_argument("--runtime-risk-prefix-steps", type=int, default=10)
+    parser.add_argument("--siglip-model", default="google/siglip-base-patch16-224")
+    parser.add_argument("--siglip-dims", type=int, default=64)
+    parser.add_argument("--runtime-vision-device", default="cpu", choices=("auto", "cpu", "cuda"))
     parser.add_argument("--low-risk-threshold", type=float, default=0.35)
     parser.add_argument("--medium-risk-threshold", type=float, default=0.65)
     parser.add_argument("--high-risk-threshold", type=float, default=0.85)
@@ -189,6 +196,7 @@ def run_eval(args: argparse.Namespace, openpi_root: pathlib.Path) -> int:
     env.seed(args.seed)
     client = websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
     run_metadata = build_run_metadata(args, openpi_root, task, torch)
+    runtime_vision_encoder = load_runtime_vision_encoder(args) if args.mode == VISION_SELECTIVE_MODE else None
 
     episodes: List[Dict[str, Any]] = []
     successes = 0
@@ -211,6 +219,7 @@ def run_eval(args: argparse.Namespace, openpi_root: pathlib.Path) -> int:
                     max_steps=max_steps,
                     video_dir=video_dir,
                     run_metadata=run_metadata,
+                    runtime_vision_encoder=runtime_vision_encoder,
                 )
                 if episode["success"]:
                     successes += 1
@@ -255,6 +264,7 @@ def run_episode(
     max_steps: int,
     video_dir: pathlib.Path,
     run_metadata: Dict[str, Any],
+    runtime_vision_encoder: Any = None,
 ) -> Dict[str, Any]:
     obs = env.reset()
     action_plan: collections.deque = collections.deque()
@@ -276,6 +286,10 @@ def run_episode(
     current_action_horizon = int(args.replan_steps)
     latest_predicted_risk = None
     latest_supervisor_decision = None
+    runtime_supervisor_decision = None
+    runtime_vision_embedding = None
+    runtime_vision_frame_id = None
+    runtime_vision_frame_path = None
     terminal_label = None
     failure_label = None
     episode_id = "{0}_task{1:02d}_seed{2}_ep{3:03d}".format(
@@ -301,15 +315,67 @@ def run_episode(
             img = apply_image_stressor(img, args.stressor_name, args.stressor_severity, np_module, t)
             wrist_img = apply_image_stressor(wrist_img, args.stressor_name, args.stressor_severity, np_module, t + 17)
             replay_images.append(img)
+            rollout_timestep = int(t - args.num_steps_wait)
+
+            if args.mode == VISION_SELECTIVE_MODE and runtime_vision_embedding is None:
+                if runtime_vision_encoder is None:
+                    raise RuntimeError("Runtime SigLIP encoder was not initialized")
+                runtime_vision_embedding = runtime_vision_encoder.embed(img)
+                runtime_vision_frame_id = "{0:04d}".format(rollout_timestep)
+                if args.save_images:
+                    frame_dir.mkdir(parents=True, exist_ok=True)
+                    runtime_vision_frame_path = frame_dir / "risk_initial_{0}.png".format(runtime_vision_frame_id)
+                    imageio_module.imwrite(str(runtime_vision_frame_path), img)
 
             if not action_plan:
-                latest_predicted_risk = predict_runtime_risk(
-                    risk_summary,
-                    args=args,
-                    task_description=task_description,
-                    step_logs=step_logs,
+                should_delay_vision_decision = (
+                    args.mode == VISION_SELECTIVE_MODE
+                    and runtime_supervisor_decision is None
+                    and len(step_logs) < max(0, int(args.runtime_risk_prefix_steps))
                 )
-                latest_supervisor_decision = decide_runtime_supervisor(args, latest_predicted_risk)
+                if should_delay_vision_decision:
+                    latest_predicted_risk = None
+                    latest_supervisor_decision = {
+                        "action": VISION_SELECTIVE_MODE,
+                        "n_action_steps": int(args.replan_steps),
+                        "reason": "collecting_early_prefix_before_runtime_risk",
+                        "predicted_risk": None,
+                        "threshold": runtime_abstain_threshold(args, risk_summary, None),
+                        "frame_id": runtime_vision_frame_id,
+                    }
+                elif runtime_supervisor_decision is not None and runtime_supervisor_decision.get("action") != "abstain":
+                    latest_predicted_risk = runtime_supervisor_decision.get("predicted_risk")
+                    latest_supervisor_decision = {
+                        "action": args.mode,
+                        "n_action_steps": int(args.replan_steps),
+                        "reason": "accepted_after_initial_runtime_risk_check",
+                        "predicted_risk": latest_predicted_risk,
+                        "threshold": runtime_supervisor_decision.get("threshold"),
+                        "frame_id": runtime_supervisor_decision.get("frame_id"),
+                    }
+                else:
+                    risk_compute_start = time.time()
+                    latest_predicted_risk = predict_runtime_risk(
+                        risk_summary,
+                        args=args,
+                        task_description=task_description,
+                        step_logs=step_logs,
+                        vision_embedding=runtime_vision_embedding,
+                    )
+                    risk_compute_seconds = time.time() - risk_compute_start
+                    latest_supervisor_decision = decide_runtime_supervisor(
+                        args,
+                        latest_predicted_risk,
+                        risk_summary=risk_summary,
+                    )
+                    if args.mode in (VISION_SELECTIVE_MODE, FIXED_PRIOR_SELECTIVE_MODE):
+                        latest_supervisor_decision["frame_id"] = runtime_vision_frame_id
+                        latest_supervisor_decision["frame_path"] = (
+                            str(runtime_vision_frame_path) if runtime_vision_frame_path is not None else None
+                        )
+                        latest_supervisor_decision["prefix_steps_observed"] = len(step_logs)
+                        latest_supervisor_decision["risk_compute_seconds"] = risk_compute_seconds
+                        runtime_supervisor_decision = dict(latest_supervisor_decision)
                 if latest_supervisor_decision["action"] == "abstain":
                     terminal_label = "abstained"
                     failure_label = "abstained"
@@ -356,7 +422,6 @@ def run_episode(
             no_progress_score = compute_no_progress_score(previous_obs, obs, np_module)
             previous_obs = obs
             previous_action = action
-            rollout_timestep = int(t - args.num_steps_wait)
             image_path = None
             if args.save_images:
                 image_path = frame_dir / "{0:04d}.png".format(rollout_timestep)
@@ -427,6 +492,9 @@ def run_episode(
             "risk_summary": args.risk_summary,
             "exception": exception_text,
             "video_path": str(video_path) if video_path is not None else None,
+            "runtime_supervisor_decision": runtime_supervisor_decision,
+            "runtime_vision_frame_id": runtime_vision_frame_id,
+            "runtime_vision_frame_path": str(runtime_vision_frame_path) if runtime_vision_frame_path is not None else None,
         }
     )
     return {
@@ -468,6 +536,7 @@ def run_episode(
         "terminal_label": terminal_label,
         "success": bool(done),
         "timeout": bool(terminal_label == "timeout"),
+        "runtime_supervisor_decision": runtime_supervisor_decision,
         "steps": step_logs,
         "metadata": metadata,
     }
@@ -618,15 +687,26 @@ def predict_runtime_risk(
     args: argparse.Namespace,
     task_description: str,
     step_logs: List[Dict[str, Any]],
+    vision_embedding: Optional[Sequence[float]] = None,
 ) -> Optional[float]:
     if not risk_summary or not risk_summary.get("ok") or "normalization" not in risk_summary:
         return None
+    if args.mode == FIXED_PRIOR_SELECTIVE_MODE:
+        return predict_fixed_task_prior(risk_summary, args)
+    risk_payload = runtime_risk_payload(risk_summary, args)
+    if risk_payload is None:
+        return None
     features = dict(zip(RUNTIME_FEATURE_NAMES, runtime_feature_vector(args, task_description, step_logs)))
-    feature_names = risk_summary["feature_names"]
-    weights = risk_summary["weights"]
-    mean = risk_summary["normalization"]["mean"]
-    std = risk_summary["normalization"]["std"]
-    temperature = max(float(risk_summary["calibration"]["temperature"]), 1e-6)
+    if args.mode == VISION_SELECTIVE_MODE:
+        if vision_embedding is None:
+            return None
+        for idx, value in enumerate(vision_embedding):
+            features["{0}{1:03d}".format(SIGLIP_FEATURE_PREFIX, idx)] = float(value)
+    feature_names = risk_payload["feature_names"]
+    weights = risk_payload["weights"]
+    mean = risk_payload["normalization"]["mean"]
+    std = risk_payload["normalization"]["std"]
+    temperature = max(float(risk_payload["calibration"]["temperature"]), 1e-6)
     logit = 0.0
     for name in feature_names:
         if name not in features:
@@ -635,6 +715,23 @@ def predict_runtime_risk(
         sigma = max(float(std[name]), 1e-6)
         logit += float(weights[name]) * ((float(value) - float(mean[name])) / sigma)
     return sigmoid(logit / temperature)
+
+
+def runtime_risk_payload(risk_summary: Dict[str, Any], args: argparse.Namespace) -> Optional[Dict[str, Any]]:
+    if args.mode == VISION_SELECTIVE_MODE:
+        payload = risk_summary.get("model_variants", {}).get("vision_language_risk")
+        return payload if isinstance(payload, dict) and payload.get("ok") else None
+    return risk_summary
+
+
+def predict_fixed_task_prior(risk_summary: Dict[str, Any], args: argparse.Namespace) -> Optional[float]:
+    payload = risk_summary.get("model_variants", {}).get("structured_progress_risk", {})
+    priors = payload.get("fixed_task_priors", [])
+    fallback = payload.get("global_prior")
+    for row in priors:
+        if row.get("suite") == args.task_suite_name and int(row.get("task_id", -1)) == int(args.task_id):
+            return float(row["failure_prior"])
+    return float(fallback) if fallback is not None else None
 
 
 def runtime_feature_vector(args: argparse.Namespace, task_description: str, step_logs: List[Dict[str, Any]]) -> List[float]:
@@ -667,20 +764,42 @@ def runtime_feature_vector(args: argparse.Namespace, task_description: str, step
     ]
 
 
-def decide_runtime_supervisor(args: argparse.Namespace, predicted_risk: Optional[float]) -> Dict[str, Any]:
-    if predicted_risk is None or args.mode not in ("selective_openpi", "adaptive_chunk_openpi", "no_progress_replan"):
+def decide_runtime_supervisor(
+    args: argparse.Namespace,
+    predicted_risk: Optional[float],
+    *,
+    risk_summary: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    risk_threshold = runtime_abstain_threshold(args, risk_summary, None)
+    if predicted_risk is None or args.mode not in (
+        "selective_openpi",
+        "adaptive_chunk_openpi",
+        "no_progress_replan",
+        VISION_SELECTIVE_MODE,
+        FIXED_PRIOR_SELECTIVE_MODE,
+    ):
         return {
             "action": args.mode,
             "n_action_steps": int(args.replan_steps),
             "reason": "no_risk_intervention",
             "predicted_risk": predicted_risk,
+            "threshold": risk_threshold,
         }
-    if args.mode == "selective_openpi" and predicted_risk >= args.abstain_threshold:
+    if args.mode in ("selective_openpi", VISION_SELECTIVE_MODE, FIXED_PRIOR_SELECTIVE_MODE) and predicted_risk >= risk_threshold:
         return {
             "action": "abstain",
             "n_action_steps": 1,
             "reason": "risk_exceeds_abstain_threshold",
             "predicted_risk": predicted_risk,
+            "threshold": risk_threshold,
+        }
+    if args.mode in (VISION_SELECTIVE_MODE, FIXED_PRIOR_SELECTIVE_MODE):
+        return {
+            "action": args.mode,
+            "n_action_steps": int(args.replan_steps),
+            "reason": "risk_below_abstain_threshold",
+            "predicted_risk": predicted_risk,
+            "threshold": risk_threshold,
         }
     if args.mode == "adaptive_chunk_openpi":
         if predicted_risk < args.low_risk_threshold:
@@ -696,13 +815,113 @@ def decide_runtime_supervisor(args: argparse.Namespace, predicted_risk: Optional
             "n_action_steps": horizon,
             "reason": reason,
             "predicted_risk": predicted_risk,
+            "threshold": risk_threshold,
         }
     return {
         "action": args.mode,
         "n_action_steps": int(args.replan_steps),
         "reason": "risk_scored_no_horizon_change",
         "predicted_risk": predicted_risk,
+        "threshold": risk_threshold,
     }
+
+
+def runtime_abstain_threshold(
+    args: argparse.Namespace,
+    risk_summary: Optional[Dict[str, Any]],
+    risk_payload: Optional[Dict[str, Any]],
+) -> float:
+    if not risk_summary:
+        return float(args.abstain_threshold)
+    if args.mode == VISION_SELECTIVE_MODE:
+        payload = risk_payload or risk_summary.get("model_variants", {}).get("vision_language_risk", {})
+        return float(payload.get("calibration", {}).get("threshold", args.abstain_threshold))
+    if args.mode == FIXED_PRIOR_SELECTIVE_MODE:
+        payload = risk_summary.get("model_variants", {}).get("structured_progress_risk", {})
+        return float(payload.get("baseline_thresholds", {}).get("fixed_task_prior", args.abstain_threshold))
+    return float(args.abstain_threshold)
+
+
+def load_runtime_vision_encoder(args: argparse.Namespace) -> Any:
+    return RuntimeSigLIPEncoder(args.siglip_model, int(args.siglip_dims), args.runtime_vision_device)
+
+
+class RuntimeSigLIPEncoder:
+    def __init__(self, model_name: str, dims: int, device_name: str) -> None:
+        from transformers import AutoModel, AutoProcessor  # type: ignore
+        import torch  # type: ignore
+
+        self.torch = torch
+        self.device = self._choose_device(device_name, torch)
+        self.dims = int(dims)
+        patch_siglip_tanh_gelu(torch)
+        self.processor = AutoProcessor.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name).to(self.device)
+        self.model.eval()
+
+    def embed(self, image: Any) -> List[float]:
+        from PIL import Image  # type: ignore
+
+        pil_image = Image.fromarray(image).convert("RGB")
+        inputs = self.processor(images=[pil_image], return_tensors="pt")
+        inputs = {name: value.to(self.device) for name, value in inputs.items()}
+        with self.torch.inference_mode():
+            output = self.model.get_image_features(**inputs)
+            features = pooled_tensor(output).float()
+            features = self.torch.nn.functional.normalize(features, dim=-1).detach().cpu()[0]
+        return compact_embedding([float(value) for value in features.tolist()], self.dims)
+
+    @staticmethod
+    def _choose_device(device_name: str, torch_module: Any) -> str:
+        if device_name == "auto":
+            return "cuda" if torch_module.cuda.is_available() else "cpu"
+        if device_name == "cuda" and not torch_module.cuda.is_available():
+            raise RuntimeError("CUDA was requested for SigLIP but torch.cuda.is_available() is false")
+        return device_name
+
+
+def pooled_tensor(output: Any) -> Any:
+    if hasattr(output, "float"):
+        return output
+    if hasattr(output, "pooler_output") and output.pooler_output is not None:
+        return output.pooler_output
+    if hasattr(output, "last_hidden_state") and output.last_hidden_state is not None:
+        return output.last_hidden_state.mean(dim=1)
+    raise TypeError("Unsupported image feature output type: {0!r}".format(type(output)))
+
+
+def patch_siglip_tanh_gelu(torch_module: Any) -> None:
+    try:
+        from transformers.activations import ACT2FN  # type: ignore
+    except Exception:
+        return
+
+    class TanhGELU(torch_module.nn.Module):  # type: ignore[misc]
+        def forward(self, value: Any) -> Any:
+            return 0.5 * value * (
+                1.0
+                + torch_module.tanh(
+                    math.sqrt(2.0 / math.pi) * (value + 0.044715 * torch_module.pow(value, 3))
+                )
+            )
+
+    ACT2FN["gelu_pytorch_tanh"] = TanhGELU
+
+
+def compact_embedding(values: Sequence[float], dims: int) -> List[float]:
+    if dims <= 0:
+        raise ValueError("dims must be positive")
+    if dims >= len(values):
+        return [float(value) for value in values]
+    compact: List[float] = []
+    width = len(values) / float(dims)
+    for idx in range(dims):
+        start = int(math.floor(idx * width))
+        stop = int(math.floor((idx + 1) * width))
+        stop = max(stop, start + 1)
+        bucket = values[start:stop]
+        compact.append(float(sum(bucket) / len(bucket)))
+    return compact
 
 
 def hash_to_unit(value: str) -> float:

@@ -1,0 +1,16 @@
+{
+  "by_mode": {
+    "direct_openpi": {
+      "episodes": 30,
+      "mean_episode_steps": 220,
+      "success_rate": 0.0,
+      "successes": 0,
+      "terminal_labels": {
+        "timeout": 30
+      },
+      "timeout_rate": 1.0,
+      "timeouts": 30
+    }
+  },
+  "episodes": 30
+}

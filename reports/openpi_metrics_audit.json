@@ -3,6 +3,23 @@
   "failures": [],
   "global_prior_test_auprc": 0.1791044776119403,
   "global_prior_test_positive_rate": 0.1791044776119403,
+  "leakage_checks": {
+    "allowed_frame_sources": [
+      "early_prefix_frame",
+      "runtime_initial_frame",
+      "video_first_frame"
+    ],
+    "embedding_path": "outputs/openpi_libero/siglip_episode_embeddings.jsonl",
+    "embedding_rows": 993,
+    "frame_sources": {
+      "video_first_frame": 993
+    },
+    "invalid_frame_source_count": 0,
+    "status": "checked",
+    "stressor_feature_overlap": [],
+    "threshold_source": "calibration split; recomputed in variant metric audit",
+    "uses_stressor_metadata": false
+  },
   "metric_checks": {
     "class_balance": {
       "all": {
@@ -410,39 +427,41 @@
   },
   "ok": true,
   "raw_episode_counts": {
-    "abstained": 9,
+    "abstained": 76,
     "by_mode": {
       "adaptive_chunk_openpi": 6,
-      "direct_openpi": 993,
-      "selective_openpi": 9
+      "direct_openpi": 1203,
+      "fixed_task_prior_selective": 210,
+      "selective_openpi": 9,
+      "vision_language_risk_selective": 211
     },
     "by_stressor": {
-      "action_noise": 216,
-      "none": 412,
-      "occlusion": 380
+      "action_noise": 396,
+      "none": 503,
+      "occlusion": 740
     },
     "by_stressor_severity": {
       "action_noise:0.20": 70,
-      "action_noise:0.40": 70,
-      "action_noise:0.60": 70,
+      "action_noise:0.40": 160,
+      "action_noise:0.60": 160,
       "action_noise:0.70": 6,
-      "none:0.00": 412,
+      "none:0.00": 503,
       "occlusion:0.20": 70,
-      "occlusion:0.40": 70,
-      "occlusion:0.60": 70,
+      "occlusion:0.40": 160,
+      "occlusion:0.60": 160,
       "occlusion:0.70": 6,
-      "occlusion:0.80": 70,
-      "occlusion:1.00": 94
+      "occlusion:0.80": 160,
+      "occlusion:1.00": 184
     },
     "by_suite": {
       "libero_10": 101,
       "libero_goal": 101,
       "libero_object": 101,
-      "libero_spatial": 705
+      "libero_spatial": 1336
     },
-    "episodes": 1008,
-    "successes": 819,
-    "timeouts": 180
+    "episodes": 1639,
+    "successes": 1235,
+    "timeouts": 328
   },
   "split_overlap": {
     "calibration_test": [],

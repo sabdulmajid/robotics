@@ -204,6 +204,30 @@ VLM ablation: `vision_language_risk` is trained from frozen SigLIP first-frame e
 
 ![OpenPI SigLIP coverage vs failure](figures/openpi_vlm_coverage_failure.svg)
 
+## Runtime SigLIP Supervisor Evaluation
+
+The offline SigLIP result has now been moved into the real OpenPI/LIBERO execution loop. In `vision_language_risk_selective` mode the evaluator captures the post-stressor initial RGB frame, computes a frozen SigLIP embedding at runtime, waits for a 10-step observable progress prefix, predicts calibrated failure risk, and either executes OpenPI or abstains before committing to the rest of the episode.
+
+Runtime validation used held-out SLURM jobs `10133` through `10147` on `libero_spatial` tasks `0..9`, seed `2000`, and three trials per task/condition. The stress grid was `none:0.0`, `occlusion:0.4`, `occlusion:0.6`, `occlusion:0.8`, `occlusion:1.0`, `action_noise:0.4`, and `action_noise:0.6`. Each mode has `210` real robot-policy episodes, for `630` runtime episodes total, all on `NVIDIA RTX A4500`.
+
+| Runtime mode | Episodes | Coverage | Completion | Failure attempted | Timeout | Abstain | Utility | Query overhead | Risk compute s |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `direct_openpi` | 210 | 1.000 | 0.695 | 0.305 | 0.305 | 0.000 | 0.528 | 1.000 | 0.000000 |
+| `fixed_task_prior_selective` | 210 | 1.000 | 0.686 | 0.314 | 0.314 | 0.000 | 0.514 | 1.016 | 0.000011 |
+| `vision_language_risk_selective` | 210 | 0.681 | 0.595 | 0.126 | 0.086 | 0.319 | 0.480 | 0.597 | 0.000103 |
+
+Bootstrap confidence intervals:
+
+| Runtime mode | Completion CI | Failure CI | Timeout CI | Abstain CI | Utility CI |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `direct_openpi` | 0.695 [0.638, 0.762] | 0.305 [0.238, 0.362] | 0.305 [0.238, 0.362] | 0.000 [0.000, 0.000] | 0.528 [0.442, 0.629] |
+| `fixed_task_prior_selective` | 0.686 [0.619, 0.748] | 0.314 [0.252, 0.376] | 0.314 [0.252, 0.376] | 0.000 [0.000, 0.000] | 0.514 [0.413, 0.607] |
+| `vision_language_risk_selective` | 0.595 [0.533, 0.671] | 0.086 [0.048, 0.129] | 0.086 [0.048, 0.129] | 0.319 [0.252, 0.381] | 0.480 [0.399, 0.572] |
+
+Interpretation: the runtime SigLIP supervisor meaningfully reduces failures among attempted episodes (`0.126` vs `0.305` for direct OpenPI and `0.314` for fixed priors), and it cuts policy-query load by abstaining from severe occlusion settings. The offline result only partially holds online: the calibration threshold is too conservative under the held-out runtime stress distribution, so completion and utility are lower than direct OpenPI because `31.9%` of episodes are rejected. This is a useful risk signal, not yet the final supervisor operating point.
+
+One caveat on overhead: `mean_runtime_risk_compute_seconds` is the per-episode prediction call after the SigLIP model is loaded. It does not include one-time model load or dependency setup time inside the SLURM job.
+
 ## Offline Supervisor
 
 ```json
@@ -274,11 +298,29 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=2 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
+Runtime SigLIP supervisor validation:
+
+```bash
+for MODE in direct_openpi fixed_task_prior_selective vision_language_risk_selective; do
+  MODE="$MODE" RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="none" STRESSOR_SEVERITY=0.0 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+  MODE="$MODE" RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.4 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+  MODE="$MODE" RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+  MODE="$MODE" RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion" STRESSOR_SEVERITY=0.8 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+  MODE="$MODE" RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 SEED=2000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+done
+
+PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py \
+  --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' \
+  --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl' \
+  --output reports/openpi_runtime_siglip_eval_summary.json
+```
+
 ## Limitations
 
 - This is an OpenPI/LIBERO execution-risk study, not a formal safety guarantee.
 - The deployable structured model excludes injected stressor metadata; the metadata-aware model is reported only as a diagnostic upper bound.
 - The VLM result uses frozen first-frame SigLIP embeddings from rollout videos; it is an observed-image ablation, not a finetuned VLM or learned dynamics model.
+- Runtime SigLIP supervision currently improves attempted-failure rate by rejecting high-risk episodes, but the current threshold is too conservative for utility at full comparison coverage.
 
 <!-- OPENPI_METRICS_AUDIT_START -->
 ## Metrics Audit
@@ -292,41 +334,60 @@ Audit JSON: `reports/openpi_metrics_audit.json`
   "failures": [],
   "global_prior_test_auprc": 0.1791044776119403,
   "global_prior_test_positive_rate": 0.1791044776119403,
+  "leakage_checks": {
+    "allowed_frame_sources": [
+      "early_prefix_frame",
+      "runtime_initial_frame",
+      "video_first_frame"
+    ],
+    "embedding_path": "outputs/openpi_libero/siglip_episode_embeddings.jsonl",
+    "embedding_rows": 993,
+    "frame_sources": {
+      "video_first_frame": 993
+    },
+    "invalid_frame_source_count": 0,
+    "status": "checked",
+    "stressor_feature_overlap": [],
+    "threshold_source": "calibration split; recomputed in variant metric audit",
+    "uses_stressor_metadata": false
+  },
   "ok": true,
   "raw_episode_counts": {
-    "abstained": 9,
+    "abstained": 76,
     "by_mode": {
       "adaptive_chunk_openpi": 6,
-      "direct_openpi": 993,
-      "selective_openpi": 9
+      "direct_openpi": 1203,
+      "fixed_task_prior_selective": 210,
+      "selective_openpi": 9,
+      "vision_language_risk_selective": 211
     },
     "by_stressor": {
-      "action_noise": 216,
-      "none": 412,
-      "occlusion": 380
+      "action_noise": 396,
+      "none": 503,
+      "occlusion": 740
     },
     "by_stressor_severity": {
       "action_noise:0.20": 70,
-      "action_noise:0.40": 70,
-      "action_noise:0.60": 70,
+      "action_noise:0.40": 160,
+      "action_noise:0.60": 160,
       "action_noise:0.70": 6,
-      "none:0.00": 412,
+      "none:0.00": 503,
       "occlusion:0.20": 70,
-      "occlusion:0.40": 70,
-      "occlusion:0.60": 70,
+      "occlusion:0.40": 160,
+      "occlusion:0.60": 160,
       "occlusion:0.70": 6,
-      "occlusion:0.80": 70,
-      "occlusion:1.00": 94
+      "occlusion:0.80": 160,
+      "occlusion:1.00": 184
     },
     "by_suite": {
       "libero_10": 101,
       "libero_goal": 101,
       "libero_object": 101,
-      "libero_spatial": 705
+      "libero_spatial": 1336
     },
-    "episodes": 1008,
-    "successes": 819,
-    "timeouts": 180
+    "episodes": 1639,
+    "successes": 1235,
+    "timeouts": 328
   },
   "split_sizes": {
     "calibration": 197,

@@ -38,6 +38,11 @@ STRESSORS="${STRESSORS:-none}"
 STRESSOR_SEVERITY="${STRESSOR_SEVERITY:-0.0}"
 OPENPI_SYNC_ENV="${OPENPI_SYNC_ENV:-0}"
 SAVE_IMAGES="${SAVE_IMAGES:-0}"
+OPENPI_INSTALL_VISION_DEPS="${OPENPI_INSTALL_VISION_DEPS:-0}"
+RUNTIME_RISK_PREFIX_STEPS="${RUNTIME_RISK_PREFIX_STEPS:-10}"
+SIGLIP_MODEL="${SIGLIP_MODEL:-google/siglip-base-patch16-224}"
+SIGLIP_DIMS="${SIGLIP_DIMS:-64}"
+RUNTIME_VISION_DEVICE="${RUNTIME_VISION_DEVICE:-cpu}"
 
 mkdir -p "${REPO_ROOT}/outputs/openpi_libero" "${REPO_ROOT}/datasets/openpi_libero_rollouts"
 mkdir -p "${REPO_ROOT}/videos" "${REPO_ROOT}/checkpoints/openpi_cache" "${REPO_ROOT}/.cache"
@@ -82,6 +87,16 @@ if [[ "${OPENPI_SYNC_ENV}" == "1" ]]; then
   uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
 else
   echo "Skipping OpenPI env sync; set OPENPI_SYNC_ENV=1 to refresh the shared venv."
+fi
+if [[ "${MODE}" == "vision_language_risk_selective" || "${OPENPI_INSTALL_VISION_DEPS}" == "1" ]]; then
+  uv pip install --python examples/libero/.venv/bin/python \
+    "transformers==4.44.2" \
+    "filelock>=3.15" \
+    "huggingface-hub>=0.23" \
+    "safetensors>=0.4" \
+    "tokenizers>=0.19" \
+    "sentencepiece>=0.2" \
+    "protobuf>=4"
 fi
 rmdir "${ENV_LOCK_DIR}" 2>/dev/null || true
 ENV_LOCK_HELD=0
@@ -169,6 +184,10 @@ for stressor in ${STRESSORS}; do
         --medium-risk-threshold "${MEDIUM_RISK_THRESHOLD}" \
         --high-risk-threshold "${HIGH_RISK_THRESHOLD}" \
         --abstain-threshold "${ABSTAIN_THRESHOLD}" \
+        --runtime-risk-prefix-steps "${RUNTIME_RISK_PREFIX_STEPS}" \
+        --siglip-model "${SIGLIP_MODEL}" \
+        --siglip-dims "${SIGLIP_DIMS}" \
+        --runtime-vision-device "${RUNTIME_VISION_DEVICE}" \
         --stressor-name "${stressor}" \
         --stressor-severity "${STRESSOR_SEVERITY}" \
         --jsonl-out "${jsonl_out}" \
