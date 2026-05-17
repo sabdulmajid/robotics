@@ -1,0 +1,8 @@
+experiment_id: openpi_train_risk
+data:
+  inputs:
+    - datasets/openpi_libero_rollouts/openpi_*.jsonl
+  prefix_steps: 10
+outputs:
+  summary_path: reports/openpi_libero_risk_summary.json
+  report_path: reports/openpi_libero_risk_planning.md
