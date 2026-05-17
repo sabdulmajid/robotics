@@ -21,6 +21,8 @@ def main() -> int:
     summary = run_openpi_risk_training(
         [str(pattern) for pattern in data.get("inputs", [])],
         prefix_steps=int(data.get("prefix_steps", 10)),
+        vision_embedding_path=data.get("vision_embeddings"),
+        vision_embedding_dims=data.get("vision_embedding_dims"),
     )
     write_openpi_risk_outputs(
         summary,

@@ -10,12 +10,12 @@ The repository now demonstrates a real OpenPI/LIBERO risk-aware execution loop:
 - LIBERO rollouts are logged as risk-training JSONL with action, reward, no-progress, predicted-risk, supervisor, video, and optional frame-image fields.
 - The direct-policy dataset now has `993` audited OpenPI/LIBERO episodes for risk training and evaluation.
 - The scaled expansion added `400` nominal episodes across `libero_spatial`, `libero_object`, `libero_goal`, and `libero_10`, plus `560` stress episodes over occlusion/action-noise severities.
-- The risk report trains two transparent logistic ablations: `metadata_oracle_risk` and `structured_progress_risk`.
+- The risk report trains three transparent logistic ablations: `metadata_oracle_risk`, `structured_progress_risk`, and frozen-SigLIP `vision_language_risk`.
 - The saved risk summary can be loaded back into the evaluator for selective rejection and adaptive action chunking.
 
 The strongest honest statement is:
 
-> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, selective-execution analysis, and runtime supervision hooks.
+> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, frozen SigLIP image-risk ablations, selective-execution analysis, and runtime supervision hooks.
 
 This is not a formal safety guarantee and not an OpenPI leaderboard claim.
 
@@ -26,7 +26,7 @@ This is not a formal safety guarantee and not an OpenPI leaderboard claim.
 | OpenPI | Robot foundation policy / VLA backbone, using `pi05_libero` | active, smoke and scaled rollout jobs passing |
 | LIBERO | Manipulation benchmark tasks and initial states | active, four suites logged |
 | robosuite / MuJoCo | Headless simulation/rendering backend through LIBERO | active on `dualcard` with EGL; `midcard` had EGL-device initialization failures |
-| VLM embeddings | Frozen image-language features for risk prediction | data path added through `SAVE_IMAGES=1`; embedding extraction/training not claimed yet |
+| VLM embeddings | Frozen image features for risk prediction | active offline ablation using `google/siglip-base-patch16-224` first-frame embeddings from 993 rollout videos |
 | World model / progress model | Transition/progress signals for timeout/no-progress risk | prefix action/no-progress/reward statistics active; learned predictive dynamics planned |
 | LeRobot | Dataset/export format and future policy baseline | planned, not used in current metrics |
 
@@ -55,13 +55,15 @@ Final audited dataset split:
 | test | 201 | 36 | 0.179 |
 | all | 993 | 174 | 0.175 |
 
-Primary deployable model: `structured_progress_risk`, which excludes injected stressor metadata.
+Runtime-loadable structured model: `structured_progress_risk`, which excludes injected stressor metadata.
+Strongest observed-image ablation: `vision_language_risk`, which also excludes injected stressor metadata and uses frozen SigLIP first-frame embeddings extracted from rollout videos.
 
 | Test model | AUROC | AUPRC | Brier | ECE | Note |
 | --- | ---: | ---: | ---: | ---: | --- |
 | global prior | 0.500 | 0.179 | 0.147 | 0.004 | Constant risk; AUPRC equals positive rate after tie audit. |
 | fixed task prior | 0.695 | 0.347 | 0.139 | 0.062 | Strong baseline because task identity is informative. |
 | structured progress risk | 0.702 | 0.297 | 0.238 | 0.315 | Slightly higher AUROC than fixed prior, weaker calibration/AUPRC. |
+| vision language risk | 0.905 | 0.811 | 0.136 | 0.235 | Frozen SigLIP first-frame embedding ablation; observed images replace hidden stressor metadata. |
 | metadata oracle risk | 0.930 | 0.840 | 0.146 | 0.264 | Diagnostic upper bound; sees stressor metadata. |
 
 At about 90% coverage on the test split:
@@ -71,29 +73,36 @@ At about 90% coverage on the test split:
 | direct OpenPI | 1.000 | 0.821 | 0.179 | 0.716 | 1.000 |
 | fixed task prior selective | 0.900 | 0.771 | 0.144 | 0.673 | 0.883 |
 | structured progress selective | 0.900 | 0.756 | 0.160 | 0.651 | 0.898 |
+| vision language selective | 0.900 | 0.821 | 0.088 | 0.748 | 0.856 |
 | metadata oracle selective | 0.900 | 0.821 | 0.088 | 0.748 | 0.856 |
 | adaptive chunk offline | 1.000 | 0.821 | 0.179 | 0.716 | 0.997 |
 | early abort on no-progress offline | 0.970 | 0.796 | 0.179 | 0.689 | 0.944 |
 | adaptive chunk plus abort offline | 0.970 | 0.796 | 0.179 | 0.689 | 0.941 |
 
-The adaptive/abort rows above are offline counterfactuals from logged episodes, not resimulated robot executions. Interpretation: there is exploitable risk structure, but the deployable structured model is not yet strong enough to beat fixed priors across all metrics. The metadata oracle shows the stress suite contains a strong signal; the next research step is replacing stressor metadata with observed VLM/world-model features.
+The adaptive/abort rows above are offline counterfactuals from logged episodes, not resimulated robot executions. Interpretation: there is exploitable risk structure. The structured-only model is not strong enough to beat fixed priors across all metrics, but the frozen SigLIP observed-image ablation recovers most of the metadata-oracle signal without using hidden stressor labels. The next research step is moving that VLM signal into the runtime supervisor and adding a true learned predictive dynamics/world-model head.
 
 ## VLM And World-Model Integration
 
-OpenPI is already the active VLA policy: it consumes RGB observations and language prompts and outputs robot actions. The risk layer currently wraps that policy using structured rollout features. The VLM/world-model path is now concrete:
+OpenPI is already the active VLA policy: it consumes RGB observations and language prompts and outputs robot actions. The risk layer currently wraps that policy using structured rollout features, and now includes an offline frozen-VLM image-risk ablation. The VLM/world-model path is concrete:
 
-1. `SAVE_IMAGES=1` in `slurm/openpi_libero_rollouts.sbatch` passes `--save-images` into the evaluator.
-2. `scripts/openpi_libero_single_task_eval.py` writes per-step RGB frame paths into JSONL when image saving is enabled.
-3. `vision_language_risk` is represented in the risk summary, but remains `skipped` until frozen image/language embeddings are extracted.
+1. `scripts/extract_openpi_siglip_embeddings.py` decodes the first frame from each logged rollout video and embeds it with frozen `google/siglip-base-patch16-224`.
+2. `vision_language_risk` trains on those frozen image embeddings plus observable structured/progress features, with stressor metadata removed.
+3. `SAVE_IMAGES=1` in `slurm/openpi_libero_rollouts.sbatch` still supports future per-step RGB frame logging for runtime/temporal VLM features.
 4. Prefix action norms, no-progress scores, action smoothness, and reward are already used as lightweight progress/world-model proxy features.
-5. The next model should compare fixed priors, structured progress, frozen VLM embeddings, and learned predictive dynamics at matched coverage.
+5. The next model should compare fixed priors, structured progress, frozen VLM embeddings, and learned predictive dynamics at matched coverage under actual runtime execution.
 
-Feasibility check from this run: the completed rollout JSONL files do not contain saved frame paths, the repo Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face. That is why VLM risk is not included in the current claim.
+Feasibility check from this run: Hugging Face access is available, SigLIP loads through `transformers`, and the existing MP4 rollout videos are decodable through the OpenPI LIBERO venv. The generated embedding artifact is intentionally ignored under `outputs/openpi_libero/`; reproduce it with:
+
+```bash
+PYTHONPATH=src python scripts/extract_openpi_siglip_embeddings.py --config configs/openpi/train_risk.yaml --output outputs/openpi_libero/siglip_episode_embeddings.jsonl --dims 64
+PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml
+```
 
 ## Verification
 
 - `python scripts/audit_openpi_metrics.py --risk-summary reports/openpi_libero_risk_summary.json --report reports/openpi_libero_risk_planning.md` passes with no failures.
 - The audit recomputes split metrics and thresholds from raw JSONL.
+- The audit also recomputes the trained `vision_language_risk` metrics from the local SigLIP embedding artifact.
 - Supervisor/non-direct runs are excluded from training inputs.
 - The global-prior AUPRC tie-handling bug is fixed and audited.
 - `python -m pytest -q` is the final repo regression check.
@@ -102,6 +111,6 @@ Feasibility check from this run: the completed rollout JSONL files do not contai
 
 Use this phrasing:
 
-> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, selective rejection, adaptive replanning hooks, and coverage-aware evaluation over 993 audited policy rollouts.
+> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk ablations, selective rejection, adaptive replanning hooks, and coverage-aware evaluation over 993 audited policy rollouts.
 
 Do not say the project has solved robot safety. The professional framing is calibrated risk-aware supervision for brittle robot foundation policy execution.

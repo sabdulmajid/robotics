@@ -23,6 +23,11 @@ from risk_aware_skill_planning.risk.openpi_models import (
     predict_examples,
     train_logistic_risk_model,
 )
+from risk_aware_skill_planning.risk.openpi_vision import (
+    append_vision_embeddings,
+    load_vision_embedding_map,
+    vision_feature_names,
+)
 
 
 STRESSOR_FEATURES = {
@@ -49,6 +54,8 @@ def run_openpi_risk_training(
     input_patterns: Sequence[str],
     *,
     prefix_steps: int = 10,
+    vision_embedding_path: str | None = None,
+    vision_embedding_dims: int | None = None,
 ) -> dict[str, Any]:
     paths = expand_input_paths(input_patterns)
     examples = load_openpi_risk_examples(paths, prefix_steps=prefix_steps)
@@ -60,6 +67,9 @@ def run_openpi_risk_training(
         "feature_names": list(examples[0].feature_names) if examples else [],
         "dataset_summary": _dataset_summary(examples),
     }
+    if vision_embedding_path:
+        summary["vision_embedding_path"] = vision_embedding_path
+        summary["vision_embedding_dims"] = vision_embedding_dims
     if len(examples) < 3 or len({example.label_failure for example in examples}) < 2:
         summary["ok"] = False
         summary["blocker"] = "Need at least three examples and both success/failure labels to train a risk critic"
@@ -91,7 +101,13 @@ def run_openpi_risk_training(
             ),
             uses_stressor_metadata=False,
         ),
-        "vision_language_risk": _vision_language_variant_status(examples),
+        "vision_language_risk": _vision_language_variant_status(
+            examples,
+            splits,
+            structured_feature_names=structured_feature_names,
+            vision_embedding_path=vision_embedding_path,
+            vision_embedding_dims=vision_embedding_dims,
+        ),
     }
     primary_name = "structured_progress_risk"
     primary = model_variants[primary_name]
@@ -125,7 +141,7 @@ def run_openpi_risk_training(
                 "openpi": "Primary robot foundation/VLA policy, using pi05_libero.",
                 "libero": "Manipulation benchmark and task suite.",
                 "lerobot": "Planned export/baseline path; not used for the current risk numbers.",
-                "vlm_features": "Planned frozen image/language embedding ablation; current rollouts did not save embeddings.",
+                "vlm_features": _vlm_stack_note(model_variants.get("vision_language_risk", {})),
                 "world_model_features": "Current structured model uses early transition/progress statistics as a lightweight world-model proxy; learned predictive dynamics are a planned ablation.",
             },
         }
@@ -205,9 +221,11 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
                 "",
                 "![OpenPI coverage vs failure](figures/openpi_coverage_failure.svg)",
                 "",
-                "The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the deployable baseline in this report because it excludes hidden stressor metadata. VLM embedding and learned world-model ablations are tracked explicitly but are not counted until RGB embeddings or predictive dynamics features are generated.",
+                "The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the primary deployable baseline in this report because it excludes hidden stressor metadata.",
                 "",
-                "VLM feasibility note: the completed rollout JSONL files do not contain saved frame paths, the current Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face during this run. The evaluator and SLURM wrapper now support `SAVE_IMAGES=1`, so the next step is an image-logging subset plus cached/fetched frozen embeddings.",
+                _vlm_report_note(variants.get("vision_language_risk", {})),
+                "",
+                _vlm_figure_links(variants.get("vision_language_risk", {})),
                 "",
                 "## Offline Supervisor",
                 "",
@@ -220,6 +238,7 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
                 "```bash",
                 "SUITES=\"libero_spatial libero_object libero_goal libero_10\" TASK_IDS=\"0 1 2 3 4 5 6 7 8 9\" NUM_TRIALS=10 STRESSORS=\"none\" sbatch slurm/openpi_libero_rollouts.sbatch",
                 "SUITES=\"libero_spatial\" TASK_IDS=\"0 1 2 3 4 5 6 7 8 9\" NUM_TRIALS=7 STRESSORS=\"occlusion action_noise\" STRESSOR_SEVERITY=0.6 sbatch slurm/openpi_libero_rollouts.sbatch",
+                "PYTHONPATH=src python scripts/extract_openpi_siglip_embeddings.py --config configs/openpi/train_risk.yaml --output outputs/openpi_libero/siglip_episode_embeddings.jsonl --dims 64",
                 "PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml",
                 "MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES=\"libero_spatial\" TASK_IDS=\"0 1 2\" NUM_TRIALS=2 STRESSORS=\"occlusion\" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch",
                 "```",
@@ -228,7 +247,7 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
                 "",
                 "- This is an OpenPI/LIBERO execution-risk study, not a formal safety guarantee.",
                 "- The deployable structured model excludes injected stressor metadata; the metadata-aware model is reported only as a diagnostic upper bound.",
-                "- VLM image embeddings and learned world-model dynamics are not claimed until image/embedding artifacts are present and audited.",
+                "- The VLM result uses frozen first-frame SigLIP embeddings from rollout videos; it is an observed-image ablation, not a finetuned VLM or learned dynamics model.",
                 "",
             ]
         )
@@ -339,23 +358,133 @@ def _fit_openpi_variant(
     return payload
 
 
-def _vision_language_variant_status(examples: Sequence[OpenPIRiskExample]) -> dict[str, Any]:
+def _vision_language_variant_status(
+    examples: Sequence[OpenPIRiskExample],
+    splits: dict[str, list[OpenPIRiskExample]],
+    *,
+    structured_feature_names: Sequence[str],
+    vision_embedding_path: str | None,
+    vision_embedding_dims: int | None,
+) -> dict[str, Any]:
     available = sorted(set(examples[0].feature_names).intersection(VLM_FEATURES)) if examples else []
     image_paths = sum(
         1
         for example in examples
         if bool(example.metadata.get("first_image_path")) or bool(example.metadata.get("embedding_path"))
     )
-    if not available and image_paths == 0:
+    video_paths = sum(1 for example in examples if bool(example.metadata.get("video_path")))
+    if not vision_embedding_path:
         return {
             "ok": False,
             "status": "skipped",
             "description": (
-                "Frozen VLM/image embedding risk ablation. Current rollout JSONL does not contain saved RGB "
-                "frame paths or embedding vectors, so this variant is explicitly not trained."
+                "Frozen VLM/image embedding risk ablation. No embedding file was provided, so this variant "
+                "is explicitly not trained."
             ),
-            "blocker": "Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results.",
+            "episodes_with_image_or_embedding_paths": image_paths,
+            "episodes_with_video_paths": video_paths,
+            "blocker": (
+                "Run scripts/extract_openpi_siglip_embeddings.py on the rollout videos and set "
+                "data.vision_embeddings in the risk config."
+            ),
         }
+    path = Path(vision_embedding_path)
+    if not path.exists():
+        return {
+            "ok": False,
+            "status": "blocked",
+            "description": "Frozen SigLIP image-embedding risk ablation.",
+            "blocker": f"Vision embedding file does not exist: {path}",
+            "episodes_with_video_paths": video_paths,
+        }
+    embeddings = load_vision_embedding_map(path, dims=vision_embedding_dims)
+    vision_splits: dict[str, list[OpenPIRiskExample]] = {}
+    missing_total: list[tuple[str, str]] = []
+    for split_name, items in splits.items():
+        appended, missing = append_vision_embeddings(items, embeddings)
+        vision_splits[split_name] = appended
+        missing_total.extend(missing)
+    if not vision_splits["train"] or len({example.label_failure for example in vision_splits["train"]}) < 2:
+        return {
+            "ok": False,
+            "status": "blocked",
+            "description": "Frozen SigLIP image-embedding risk ablation.",
+            "blocker": "Vision-embedding training split needs both success and failure labels.",
+            "embedding_path": str(path),
+            "embedding_examples": sum(len(items) for items in vision_splits.values()),
+            "missing_examples": len(missing_total),
+        }
+    dims = _vision_dims(vision_splits)
+    feature_names = tuple(structured_feature_names) + vision_feature_names(dims)
+    payload = _fit_openpi_variant(
+        [example for items in vision_splits.values() for example in items],
+        vision_splits,
+        feature_names=feature_names,
+        description=(
+            "Deployable frozen SigLIP first-frame image-embedding ablation. It combines observable "
+            "structured/progress features with compact VLM image features extracted from rollout videos, "
+            "and it does not use hidden stressor metadata."
+        ),
+        uses_stressor_metadata=False,
+    )
+    payload.update(
+        {
+            "status": "trained" if payload.get("ok") else payload.get("status", "blocked"),
+            "embedding_path": str(path),
+            "embedding_dims": dims,
+            "embedding_examples": sum(len(items) for items in vision_splits.values()),
+            "embedding_coverage": sum(len(items) for items in vision_splits.values()) / max(1, len(examples)),
+            "missing_examples": len(missing_total),
+            "missing_preview": [f"{run_id}/{episode_id}" for run_id, episode_id in missing_total[:5]],
+        }
+    )
+    return payload
+
+
+def _vision_dims(splits: Mapping[str, Sequence[OpenPIRiskExample]]) -> int:
+    for items in splits.values():
+        for example in items:
+            names = [name for name in example.feature_names if name.startswith("siglip_image_")]
+            if names:
+                return len(names)
+    raise ValueError("No vision features found")
+
+
+def _vlm_stack_note(vision: Mapping[str, Any]) -> str:
+    if vision.get("ok"):
+        return (
+            "Frozen SigLIP first-frame image embeddings from logged rollout videos are trained as "
+            "`vision_language_risk`; no stressor metadata is used."
+        )
+    return "Frozen image/language embedding ablation is wired but not active until an embedding file is provided."
+
+
+def _vlm_report_note(vision: Mapping[str, Any]) -> str:
+    if vision.get("ok"):
+        metrics = vision.get("metrics", {}).get("test", {})
+        return (
+            "VLM ablation: `vision_language_risk` is trained from frozen SigLIP first-frame embeddings "
+            "extracted from the logged rollout videos, combined with the same observable structured/progress "
+            f"features. Test AUROC is {_fmt(metrics.get('auroc'))}, AUPRC is {_fmt(metrics.get('auprc'))}, "
+            f"and ECE is {_fmt(metrics.get('ece'))}. The result is reported as an observed-image ablation, "
+            "not as a finetuned VLM or a learned world model."
+        )
+    return (
+        "VLM ablation: `vision_language_risk` is present but not trained in this run. "
+        f"Blocker: {vision.get('blocker', 'missing frozen RGB embeddings')}."
+    )
+
+
+def _vlm_figure_links(vision: Mapping[str, Any]) -> str:
+    if not vision.get("ok"):
+        return ""
+    return "\n".join(
+        [
+            "![OpenPI SigLIP risk reliability](figures/openpi_vlm_risk_reliability.svg)",
+            "",
+            "![OpenPI SigLIP coverage vs failure](figures/openpi_vlm_coverage_failure.svg)",
+        ]
+    )
     return {
         "ok": False,
         "status": "blocked",
@@ -462,10 +591,17 @@ def _offline_policy_comparison(model_variants: dict[str, Any], primary: dict[str
     comparison["early_abort_on_no_progress_offline"] = _early_abort_metrics(primary_rows)
     comparison["adaptive_chunk_plus_abort_offline"] = _adaptive_plus_abort_metrics(primary_rows)
     vision = model_variants.get("vision_language_risk", {})
-    comparison["vision_language_risk_selective"] = {
-        "status": vision.get("status", "blocked"),
-        "blocker": vision.get("blocker"),
-    }
+    if vision.get("ok"):
+        comparison["vision_language_risk_selective"] = _selective_policy_metrics(
+            vision.get("prediction_rows", {}).get("test", []),
+            target_coverage=0.9,
+            note="Offline selective execution using frozen SigLIP image-embedding risk scores.",
+        )
+    else:
+        comparison["vision_language_risk_selective"] = {
+            "status": vision.get("status", "blocked"),
+            "blocker": vision.get("blocker"),
+        }
     return comparison
 
 
@@ -797,6 +933,7 @@ def _offline_policy_ci_table(comparison: dict[str, Any]) -> str:
         "fixed_task_prior_selective",
         "structured_progress_risk_selective",
         "metadata_oracle_risk_selective",
+        "vision_language_risk_selective",
         "adaptive_chunk_openpi_offline",
         "early_abort_on_no_progress_offline",
         "adaptive_chunk_plus_abort_offline",
@@ -838,6 +975,22 @@ def _write_openpi_figures(summary: dict[str, Any]) -> None:
             figures_dir / "openpi_coverage_failure.svg",
             title="OpenPI Selective Execution: Coverage vs Failure",
         )
+    vision = summary.get("model_variants", {}).get("vision_language_risk", {})
+    if vision.get("ok"):
+        vision_reliability = vision.get("metrics", {}).get("test", {}).get("reliability_bins", [])
+        vision_coverage = vision.get("coverage_curves", {}).get("test", [])
+        if vision_reliability:
+            _write_reliability_svg(
+                vision_reliability,
+                figures_dir / "openpi_vlm_risk_reliability.svg",
+                title="OpenPI SigLIP Risk Reliability",
+            )
+        if vision_coverage:
+            _write_coverage_svg(
+                vision_coverage,
+                figures_dir / "openpi_vlm_coverage_failure.svg",
+                title="OpenPI SigLIP Selective Execution",
+            )
 
 
 def _write_reliability_svg(bins: Sequence[dict[str, Any]], output_path: Path, *, title: str) -> None:

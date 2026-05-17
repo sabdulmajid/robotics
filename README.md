@@ -15,9 +15,9 @@ Current status:
 - Real OpenPI/LIBERO rollout path: added a Python 3.8-compatible single-task evaluator that starts from OpenPI's upstream LIBERO evaluator and emits risk-ready JSONL logs.
 - First real OpenPI policy smoke: `pi05_libero` completed one LIBERO-Spatial task-0 episode successfully on `dualcard` SLURM job `10092`; this is a smoke result, not a benchmark success-rate claim.
 - Scaled OpenPI/LIBERO direct rollouts: `993` direct-policy episodes are logged for risk training, including `400` new nominal episodes across `libero_spatial`, `libero_object`, `libero_goal`, and `libero_10`, plus `560` new stress episodes over occlusion/action-noise severity sweeps.
-- OpenPI risk critics: trained audited `metadata_oracle_risk` and `structured_progress_risk` logistic ablations. The metadata-aware diagnostic model reaches test AUROC `0.930` / AUPRC `0.840`; the deployable structured/progress model reaches AUROC `0.702` / AUPRC `0.297` without hidden stressor metadata. The fixed task prior remains competitive, so the report does not overclaim a learned-risk win.
+- OpenPI risk critics: trained audited `metadata_oracle_risk`, `structured_progress_risk`, and frozen-SigLIP `vision_language_risk` logistic ablations. The diagnostic metadata-aware model reaches test AUROC `0.930` / AUPRC `0.840`; the deployable structured/progress model reaches AUROC `0.702` / AUPRC `0.297`; the observed-image SigLIP ablation reaches AUROC `0.905` / AUPRC `0.811` without hidden stressor metadata.
 - Supervisor comparisons: selective execution, adaptive chunking, no-progress early abort, and adaptive-plus-abort are reported with coverage, failure, expected utility, policy-query overhead, and bootstrap confidence intervals. Adaptive/abort rows are offline counterfactuals from logged episodes unless explicitly marked as runtime rollouts.
-- VLM/world-model path: image-frame logging is wired behind `SAVE_IMAGES=1`, and the structured model already uses early rollout progress features as a lightweight transition/progress signal. Frozen VLM embeddings and learned predictive dynamics are tracked as next ablations, not claimed as completed results.
+- VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and evaluated as `vision_language_risk`; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
 
@@ -29,7 +29,7 @@ The main project direction is to wrap OpenPI `pi05_libero` execution with calibr
 | --- | --- | --- |
 | [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed, first policy rollout passed |
 | [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | active; 993 direct OpenPI episodes logged across suites/stressors |
-| VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | data path implemented with `SAVE_IMAGES=1`; embedding model not yet trained or claimed |
+| VLM/image features | Frozen SigLIP image embeddings for risk prediction from logged RGB frames/videos and task context | active offline ablation; 993 rollout videos embedded with `google/siglip-base-patch16-224` |
 | World model features | Progress/transition signals for no-progress and likely-timeout risk | lightweight prefix statistics active; learned predictive dynamics planned |
 | [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned export/baseline, not used in current metrics |
 
@@ -53,6 +53,7 @@ python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/ope
 python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml --strict
 python -m risk_aware_skill_planning.cli openpi-libero-summarize --input datasets/openpi_libero_rollouts/example.jsonl
 python scripts/openpi_libero_single_task_eval.py --dry-run
+PYTHONPATH=src python scripts/extract_openpi_siglip_embeddings.py --config configs/openpi/train_risk.yaml --output outputs/openpi_libero/siglip_episode_embeddings.jsonl --dims 64
 PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml
 sbatch slurm/openpi_libero_smoke.sbatch
 sbatch slurm/openpi_libero_official_smoke.sbatch
@@ -66,7 +67,7 @@ MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json 
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 The official smoke starts OpenPI's policy server and runs one real `pi05_libero` episode through the filtered LIBERO evaluator.
-The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training. The risk summary can be passed back into the same rollout script for `selective_openpi` and `adaptive_chunk_openpi` supervisor evaluations.
+The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training. The SigLIP extraction script converts the existing rollout videos into ignored frozen embedding artifacts under `outputs/`, and the risk summary can be passed back into the same rollout script for `selective_openpi` and `adaptive_chunk_openpi` supervisor evaluations.
 
 Tracked first-rollout artifacts:
 
@@ -267,16 +268,17 @@ reports/       tracked summaries and final report assets
 
 - The current OpenPI/LIBERO result is a risk-supervision study, not a benchmark-scale OpenPI leaderboard claim.
 - `oracle_risk` uses the toy simulator's ground-truth risk rules. The real OpenPI risk model is still a transparent logistic baseline.
-- The `metadata_oracle_risk` OpenPI model includes stressor metadata and is diagnostic only. The deployable `structured_progress_risk` model excludes hidden stressor metadata.
-- The current structured risk model is useful but not decisive: it improves AUROC over fixed task priors, while fixed priors remain stronger on AUPRC/Brier in the current split.
-- VLM embeddings and learned world-model dynamics are planned ablations; the repo now logs the data needed for them but does not claim those results yet.
+- The `metadata_oracle_risk` OpenPI model includes stressor metadata and is diagnostic only. The deployable `structured_progress_risk` and `vision_language_risk` ablations exclude hidden stressor metadata.
+- The structured-only risk model is useful but not decisive: it improves AUROC over fixed task priors, while fixed priors remain stronger on AUPRC/Brier in the current split.
+- The SigLIP VLM result is an offline observed-image ablation from saved rollout videos. It is not yet a low-latency runtime VLM supervisor and is not a finetuned VLM policy.
+- Learned world-model dynamics are still planned; current world-model evidence is limited to prefix progress, action smoothness, no-progress, and reward statistics.
 - No custom robosuite environment, learned manipulation policy, or neural robosuite risk critic is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
 1. Run runtime selective/adaptive supervisor comparisons using the full 993-episode trained risk summary.
-2. Add frozen VLM image/language embeddings from `SAVE_IMAGES=1` rollout frames and compare them against fixed task priors.
+2. Move the SigLIP embedding path from offline video extraction into the runtime supervisor loop.
 3. Train a lightweight predictive progress/world-model head and compare it to prefix-statistics-only risk features.
 4. Add a LeRobot-format export or baseline once the dataset contract is stable.
 5. Keep toy oracle and learned-risk gates as regression tests.

@@ -13,6 +13,8 @@ data:
     - datasets/openpi_libero_rollouts/openpi_rollouts_10130.jsonl
     - datasets/openpi_libero_rollouts/openpi_rollouts_10131.jsonl
   prefix_steps: 10
+  vision_embeddings: outputs/openpi_libero/siglip_episode_embeddings.jsonl
+  vision_embedding_dims: 64
 outputs:
   summary_path: reports/openpi_libero_risk_summary.json
   report_path: reports/openpi_libero_risk_planning.md

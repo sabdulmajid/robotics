@@ -163,7 +163,7 @@ Model ablations:
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | `metadata_oracle_risk` | trained | True | 0.930 | 0.840 | 0.264 | 0.821 | Diagnostic upper-bound model that is allowed to see controlled stressor metadata. It should not be treated as deployable risk perception. |
 | `structured_progress_risk` | trained | False | 0.702 | 0.297 | 0.315 | 1.000 | Deployable structured baseline using task/language hashes, action horizon, and early rollout progress statistics, with hidden stressor metadata removed. |
-| `vision_language_risk` | skipped | False | n/a | n/a | n/a | n/a | Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results. |
+| `vision_language_risk` | trained | False | 0.905 | 0.811 | 0.235 | 0.861 | Deployable frozen SigLIP first-frame image-embedding ablation. It combines observable structured/progress features with compact VLM image features extracted from rollout videos, and it does not use hidden stressor metadata. |
 
 Offline policy comparison at matched coverage:
 
@@ -177,7 +177,7 @@ Offline policy comparison at matched coverage:
 | `adaptive_chunk_openpi_offline` | offline_counterfactual | 1.000 | 0.821 | 0.179 | 0.179 | 0.000 | 0.716 | 0.997 | Risk changes estimated action horizon and policy-query overhead only; success labels are not resimulated. |
 | `early_abort_on_no_progress_offline` | offline_counterfactual | 0.970 | 0.796 | 0.179 | 0.174 | 0.030 | 0.689 | 0.944 | Aborts episodes whose first logged prefix has high no-progress; not a resimulated controller result. |
 | `adaptive_chunk_plus_abort_offline` | offline_counterfactual | 0.970 | 0.796 | 0.179 | 0.174 | 0.030 | 0.689 | 0.941 | Combines adaptive horizon overhead estimate with the same prefix no-progress abort rule. |
-| `vision_language_risk_selective` | skipped | n/a | n/a | n/a | n/a | n/a | n/a | n/a | Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results. |
+| `vision_language_risk_selective` | evaluated | 0.900 | 0.821 | 0.088 | 0.080 | 0.100 | 0.748 | 0.856 | Offline selective execution using frozen SigLIP image-embedding risk scores. |
 
 Bootstrap confidence intervals for selected supervisor metrics are stored in the risk summary. Compact view:
 
@@ -187,6 +187,7 @@ Bootstrap confidence intervals for selected supervisor metrics are stored in the
 | `fixed_task_prior_selective` | 0.771 [0.711, 0.831] | 0.130 [0.085, 0.179] | 0.130 [0.085, 0.179] | 0.099 [0.060, 0.144] | 0.672 [0.590, 0.753] |
 | `structured_progress_risk_selective` | 0.755 [0.687, 0.816] | 0.145 [0.100, 0.199] | 0.145 [0.100, 0.199] | 0.100 [0.060, 0.139] | 0.649 [0.561, 0.731] |
 | `metadata_oracle_risk_selective` | 0.820 [0.766, 0.871] | 0.079 [0.045, 0.119] | 0.079 [0.045, 0.119] | 0.101 [0.060, 0.144] | 0.747 [0.674, 0.816] |
+| `vision_language_risk_selective` | 0.820 [0.766, 0.871] | 0.079 [0.045, 0.119] | 0.079 [0.045, 0.119] | 0.101 [0.060, 0.144] | 0.747 [0.675, 0.816] |
 | `adaptive_chunk_openpi_offline` | 0.820 [0.766, 0.871] | 0.180 [0.129, 0.234] | 0.180 [0.129, 0.234] | 0.000 [0.000, 0.000] | 0.715 [0.634, 0.792] |
 | `early_abort_on_no_progress_offline` | 0.795 [0.736, 0.851] | 0.175 [0.124, 0.229] | 0.175 [0.124, 0.229] | 0.030 [0.010, 0.055] | 0.687 [0.599, 0.768] |
 | `adaptive_chunk_plus_abort_offline` | 0.795 [0.736, 0.851] | 0.175 [0.124, 0.229] | 0.175 [0.124, 0.229] | 0.030 [0.010, 0.055] | 0.687 [0.599, 0.768] |
@@ -195,9 +196,13 @@ Bootstrap confidence intervals for selected supervisor metrics are stored in the
 
 ![OpenPI coverage vs failure](figures/openpi_coverage_failure.svg)
 
-The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the deployable baseline in this report because it excludes hidden stressor metadata. VLM embedding and learned world-model ablations are tracked explicitly but are not counted until RGB embeddings or predictive dynamics features are generated.
+The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the primary deployable baseline in this report because it excludes hidden stressor metadata.
 
-VLM feasibility note: the completed rollout JSONL files do not contain saved frame paths, the current Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face during this run. The evaluator and SLURM wrapper now support `SAVE_IMAGES=1`, so the next step is an image-logging subset plus cached/fetched frozen embeddings.
+VLM ablation: `vision_language_risk` is trained from frozen SigLIP first-frame embeddings extracted from the logged rollout videos, combined with the same observable structured/progress features. Test AUROC is 0.905, AUPRC is 0.811, and ECE is 0.235. The result is reported as an observed-image ablation, not as a finetuned VLM or a learned world model.
+
+![OpenPI SigLIP risk reliability](figures/openpi_vlm_risk_reliability.svg)
+
+![OpenPI SigLIP coverage vs failure](figures/openpi_vlm_coverage_failure.svg)
 
 ## Offline Supervisor
 
@@ -264,6 +269,7 @@ VLM feasibility note: the completed rollout JSONL files do not contain saved fra
 ```bash
 SUITES="libero_spatial libero_object libero_goal libero_10" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=10 STRESSORS="none" sbatch slurm/openpi_libero_rollouts.sbatch
 SUITES="libero_spatial" TASK_IDS="0 1 2 3 4 5 6 7 8 9" NUM_TRIALS=7 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 sbatch slurm/openpi_libero_rollouts.sbatch
+PYTHONPATH=src python scripts/extract_openpi_siglip_embeddings.py --config configs/openpi/train_risk.yaml --output outputs/openpi_libero/siglip_episode_embeddings.jsonl --dims 64
 PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml
 MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=2 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
@@ -272,7 +278,7 @@ MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json 
 
 - This is an OpenPI/LIBERO execution-risk study, not a formal safety guarantee.
 - The deployable structured model excludes injected stressor metadata; the metadata-aware model is reported only as a diagnostic upper bound.
-- VLM image embeddings and learned world-model dynamics are not claimed until image/embedding artifacts are present and audited.
+- The VLM result uses frozen first-frame SigLIP embeddings from rollout videos; it is an observed-image ablation, not a finetuned VLM or learned dynamics model.
 
 <!-- OPENPI_METRICS_AUDIT_START -->
 ## Metrics Audit

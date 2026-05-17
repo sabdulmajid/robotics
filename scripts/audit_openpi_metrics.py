@@ -14,6 +14,11 @@ from risk_aware_skill_planning.risk.openpi_dataset import (
     split_examples,
 )
 from risk_aware_skill_planning.risk.openpi_models import choose_threshold
+from risk_aware_skill_planning.risk.openpi_vision import (
+    append_vision_embeddings,
+    has_vision_features,
+    load_vision_embedding_map,
+)
 
 
 AUDIT_START = "<!-- OPENPI_METRICS_AUDIT_START -->"
@@ -109,10 +114,15 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
                 "blocker": variant.get("blocker") if isinstance(variant, Mapping) else "Variant entry is not a mapping",
             }
             continue
-        variant_probs_by_split = {name: predict_from_summary(variant, items) for name, items in splits.items()}
+        variant_splits = splits_for_payload(variant, splits, summary, failures)
+        variant_labels_by_split = {
+            name: [example.label_failure for example in items]
+            for name, items in variant_splits.items()
+        }
+        variant_probs_by_split = {name: predict_from_summary(variant, items) for name, items in variant_splits.items()}
         variant_threshold = float(variant["calibration"]["threshold"])
         variant_calibration_threshold = choose_threshold(
-            labels_by_split["calibration"],
+            variant_labels_by_split["calibration"],
             variant_probs_by_split["calibration"],
         )
         if not close(variant_calibration_threshold, variant_threshold, tolerance):
@@ -122,19 +132,25 @@ def audit_summary(summary: Mapping[str, Any], *, raw_glob: str, tolerance: float
             )
         variant_metrics = {}
         variant_baselines = {"global_prior": {}, "fixed_task_prior": {}}
-        for split_name, items in splits.items():
-            labels = labels_by_split[split_name]
+        variant_global_prior = (
+            sum(variant_labels_by_split["train"]) / len(variant_labels_by_split["train"])
+            if variant_labels_by_split["train"]
+            else 0.0
+        )
+        variant_task_priors = task_priors_from_examples(variant_splits["train"], default=variant_global_prior)
+        for split_name, items in variant_splits.items():
+            labels = variant_labels_by_split[split_name]
             probs = variant_probs_by_split[split_name]
             variant_metrics[split_name] = binary_risk_metrics(labels, probs, threshold=variant_threshold)
             variant_metrics[split_name]["reliability_bins"] = reliability_bins(labels, probs)
             variant_baselines["global_prior"][split_name] = binary_risk_metrics(
                 labels,
-                [global_prior for _ in items],
+                [variant_global_prior for _ in items],
                 threshold=variant_threshold,
             )
             variant_baselines["fixed_task_prior"][split_name] = binary_risk_metrics(
                 labels,
-                [task_priors.get((example.suite, example.task_id), global_prior) for example in items],
+                [variant_task_priors.get((example.suite, example.task_id), variant_global_prior) for example in items],
                 threshold=variant_threshold,
             )
         compare_mapping(f"model_variants.{variant_name}.metrics", variant_metrics, variant.get("metrics", {}), failures, tolerance)
@@ -238,6 +254,37 @@ def predict_from_summary(summary: Mapping[str, Any], examples) -> list[float]:
             logit += weight * ((float(value) - mu) / sigma)
         probs.append(sigmoid(logit / temperature))
     return probs
+
+
+def splits_for_payload(
+    payload: Mapping[str, Any],
+    base_splits: Mapping[str, list[Any]],
+    top_summary: Mapping[str, Any],
+    failures: list[str],
+) -> dict[str, list[Any]]:
+    names = list(payload.get("feature_names", []))
+    if not has_vision_features(names):
+        return {name: list(items) for name, items in base_splits.items()}
+    embedding_path = payload.get("embedding_path") or top_summary.get("vision_embedding_path")
+    if not embedding_path:
+        failures.append("Vision-feature payload is missing embedding_path")
+        return {name: list(items) for name, items in base_splits.items()}
+    dims = payload.get("embedding_dims") or top_summary.get("vision_embedding_dims")
+    try:
+        embeddings = load_vision_embedding_map(str(embedding_path), dims=int(dims) if dims is not None else None)
+    except Exception as exc:  # noqa: BLE001 - audit should report all mismatches in one payload.
+        failures.append(f"Could not load vision embeddings from {embedding_path}: {exc}")
+        return {name: list(items) for name, items in base_splits.items()}
+    output: dict[str, list[Any]] = {}
+    missing_total: list[tuple[str, str]] = []
+    for split_name, items in base_splits.items():
+        appended, missing = append_vision_embeddings(items, embeddings)
+        output[split_name] = appended
+        missing_total.extend(missing)
+    if missing_total:
+        preview = [f"{run_id}/{episode_id}" for run_id, episode_id in missing_total[:5]]
+        failures.append(f"Vision embeddings missing for {len(missing_total)} audit examples: {preview}")
+    return output
 
 
 def task_priors_from_examples(examples, *, default: float) -> dict[tuple[str, int], float]:
