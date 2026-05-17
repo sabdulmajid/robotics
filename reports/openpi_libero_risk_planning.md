@@ -167,20 +167,37 @@ Model ablations:
 
 Offline policy comparison at matched coverage:
 
-| Policy | Status | Coverage | Task completion | Failure attempted | Rejection | Note |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| `direct_openpi` | evaluated | 1.000 | 0.821 | 0.179 | 0.000 |  |
-| `global_prior_selective` | evaluated | 0.900 | 0.736 | 0.182 | 0.100 |  |
-| `fixed_task_prior_selective` | evaluated | 0.900 | 0.771 | 0.144 | 0.100 |  |
-| `metadata_oracle_risk_selective` | evaluated | 0.900 | 0.821 | 0.088 | 0.100 |  |
-| `structured_progress_risk_selective` | evaluated | 0.900 | 0.756 | 0.160 | 0.100 |  |
-| `vision_language_risk_selective` | skipped | n/a | n/a | n/a | n/a | Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results. |
+| Policy | Status | Coverage | Task completion | Failure attempted | Timeout | Abstain | Utility | Query overhead | Note |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `direct_openpi` | evaluated | 1.000 | 0.821 | 0.179 | 0.179 | 0.000 | 0.716 | 1.000 | Observed direct OpenPI test episodes. |
+| `global_prior_selective` | evaluated | 0.900 | 0.736 | 0.182 | 0.164 | 0.100 | 0.621 | 0.899 | Offline selective execution using the global training failure prior. |
+| `fixed_task_prior_selective` | evaluated | 0.900 | 0.771 | 0.144 | 0.129 | 0.100 | 0.673 | 0.883 | Offline selective execution using per-suite/task training priors. |
+| `metadata_oracle_risk_selective` | evaluated | 0.900 | 0.821 | 0.088 | 0.080 | 0.100 | 0.748 | 0.856 | Offline selective execution using `metadata_oracle_risk` risk scores. |
+| `structured_progress_risk_selective` | evaluated | 0.900 | 0.756 | 0.160 | 0.144 | 0.100 | 0.651 | 0.898 | Offline selective execution using `structured_progress_risk` risk scores. |
+| `adaptive_chunk_openpi_offline` | offline_counterfactual | 1.000 | 0.821 | 0.179 | 0.179 | 0.000 | 0.716 | 0.997 | Risk changes estimated action horizon and policy-query overhead only; success labels are not resimulated. |
+| `early_abort_on_no_progress_offline` | offline_counterfactual | 0.970 | 0.796 | 0.179 | 0.174 | 0.030 | 0.689 | 0.944 | Aborts episodes whose first logged prefix has high no-progress; not a resimulated controller result. |
+| `adaptive_chunk_plus_abort_offline` | offline_counterfactual | 0.970 | 0.796 | 0.179 | 0.174 | 0.030 | 0.689 | 0.941 | Combines adaptive horizon overhead estimate with the same prefix no-progress abort rule. |
+| `vision_language_risk_selective` | skipped | n/a | n/a | n/a | n/a | n/a | n/a | n/a | Rerun a subset with --save-images or add an embedding extraction pass before claiming VLM risk results. |
+
+Bootstrap confidence intervals for selected supervisor metrics are stored in the risk summary. Compact view:
+
+| Policy | Success CI | Failure CI | Timeout CI | Abstain CI | Utility CI |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `direct_openpi` | 0.820 [0.766, 0.871] | 0.180 [0.129, 0.234] | 0.180 [0.129, 0.234] | 0.000 [0.000, 0.000] | 0.715 [0.634, 0.792] |
+| `fixed_task_prior_selective` | 0.771 [0.711, 0.831] | 0.130 [0.085, 0.179] | 0.130 [0.085, 0.179] | 0.099 [0.060, 0.144] | 0.672 [0.590, 0.753] |
+| `structured_progress_risk_selective` | 0.755 [0.687, 0.816] | 0.145 [0.100, 0.199] | 0.145 [0.100, 0.199] | 0.100 [0.060, 0.139] | 0.649 [0.561, 0.731] |
+| `metadata_oracle_risk_selective` | 0.820 [0.766, 0.871] | 0.079 [0.045, 0.119] | 0.079 [0.045, 0.119] | 0.101 [0.060, 0.144] | 0.747 [0.674, 0.816] |
+| `adaptive_chunk_openpi_offline` | 0.820 [0.766, 0.871] | 0.180 [0.129, 0.234] | 0.180 [0.129, 0.234] | 0.000 [0.000, 0.000] | 0.715 [0.634, 0.792] |
+| `early_abort_on_no_progress_offline` | 0.795 [0.736, 0.851] | 0.175 [0.124, 0.229] | 0.175 [0.124, 0.229] | 0.030 [0.010, 0.055] | 0.687 [0.599, 0.768] |
+| `adaptive_chunk_plus_abort_offline` | 0.795 [0.736, 0.851] | 0.175 [0.124, 0.229] | 0.175 [0.124, 0.229] | 0.030 [0.010, 0.055] | 0.687 [0.599, 0.768] |
 
 ![OpenPI risk reliability](figures/openpi_risk_reliability.svg)
 
 ![OpenPI coverage vs failure](figures/openpi_coverage_failure.svg)
 
 The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the deployable baseline in this report because it excludes hidden stressor metadata. VLM embedding and learned world-model ablations are tracked explicitly but are not counted until RGB embeddings or predictive dynamics features are generated.
+
+VLM feasibility note: the completed rollout JSONL files do not contain saved frame paths, the current Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face during this run. The evaluator and SLURM wrapper now support `SAVE_IMAGES=1`, so the next step is an image-logging subset plus cached/fetched frozen embeddings.
 
 ## Offline Supervisor
 

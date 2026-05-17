@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import html
+import math
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
+from risk_aware_skill_planning.evaluation.bootstrap import bootstrap_ci
 from risk_aware_skill_planning.evaluation.openpi_metrics import binary_risk_metrics, reliability_bins
+from risk_aware_skill_planning.evaluation.risk_coverage import expected_utility
 from risk_aware_skill_planning.risk.openpi_dataset import (
     OpenPIRiskExample,
     class_balance,
@@ -194,11 +197,17 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
                 "",
                 _offline_policy_table(summary.get("offline_policy_comparison", {})),
                 "",
+                "Bootstrap confidence intervals for selected supervisor metrics are stored in the risk summary. Compact view:",
+                "",
+                _offline_policy_ci_table(summary.get("offline_policy_comparison", {})),
+                "",
                 "![OpenPI risk reliability](figures/openpi_risk_reliability.svg)",
                 "",
                 "![OpenPI coverage vs failure](figures/openpi_coverage_failure.svg)",
                 "",
                 "The metadata-aware model is diagnostic because it can observe the injected stressor. The structured/progress model is the deployable baseline in this report because it excludes hidden stressor metadata. VLM embedding and learned world-model ablations are tracked explicitly but are not counted until RGB embeddings or predictive dynamics features are generated.",
+                "",
+                "VLM feasibility note: the completed rollout JSONL files do not contain saved frame paths, the current Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face during this run. The evaluator and SLURM wrapper now support `SAVE_IMAGES=1`, so the next step is an image-logging subset plus cached/fetched frozen embeddings.",
                 "",
                 "## Offline Supervisor",
                 "",
@@ -271,6 +280,7 @@ def _fit_openpi_variant(
     split_metrics = {}
     baseline_metrics = {"global_prior": {}, "fixed_task_prior": {}}
     coverage_curves = {}
+    prediction_rows = {}
     global_prior = _mean_label(projected_splits["train"])
     task_priors = _task_priors(projected_splits["train"], default=global_prior)
     for split_name, items in projected_splits.items():
@@ -279,6 +289,7 @@ def _fit_openpi_variant(
         split_metrics[split_name] = binary_risk_metrics(labels, probs, threshold=threshold)
         split_metrics[split_name]["reliability_bins"] = reliability_bins(labels, probs)
         coverage_curves[split_name] = _coverage_curve(labels, probs)
+        prediction_rows[split_name] = _prediction_rows(items, probs)
         baseline_metrics["global_prior"][split_name] = binary_risk_metrics(
             labels,
             [global_prior for _ in items],
@@ -311,7 +322,17 @@ def _fit_openpi_variant(
             "global_prior": _baseline_coverage_curves(projected_splits, global_prior=global_prior, task_priors=task_priors, mode="global"),
             "fixed_task_prior": _baseline_coverage_curves(projected_splits, global_prior=global_prior, task_priors=task_priors, mode="fixed_task"),
         },
+        "baseline_prediction_rows": {
+            "test": {
+                "global_prior": _prediction_rows(projected_splits["test"], [global_prior for _ in projected_splits["test"]]),
+                "fixed_task_prior": _prediction_rows(
+                    projected_splits["test"],
+                    [_lookup_task_prior(task_priors, example, global_prior) for example in projected_splits["test"]],
+                ),
+            }
+        },
         "coverage_curves": coverage_curves,
+        "prediction_rows": {"test": prediction_rows["test"]},
     }
     if calibration_warning:
         payload["calibration_warning"] = calibration_warning
@@ -416,26 +437,30 @@ def _baseline_coverage_curves(
 def _offline_policy_comparison(model_variants: dict[str, Any], primary: dict[str, Any]) -> dict[str, Any]:
     test_metrics = primary.get("metrics", {}).get("test", {})
     direct_failure_rate = test_metrics.get("positive_rate")
+    primary_rows = primary.get("prediction_rows", {}).get("test", [])
     comparison: dict[str, Any] = {
-        "direct_openpi": {
-            "status": "evaluated",
-            "coverage": 1.0,
-            "task_completion_rate": None if direct_failure_rate is None else 1.0 - float(direct_failure_rate),
-            "failure_rate_attempted": direct_failure_rate,
-            "rejection_rate": 0.0,
-        },
-        "global_prior_selective": _curve_at_target(
-            primary.get("baseline_coverage_curves", {}).get("global_prior", {}).get("test", []),
-            0.9,
+        "direct_openpi": _direct_policy_metrics(primary_rows, direct_failure_rate=direct_failure_rate),
+        "global_prior_selective": _selective_policy_metrics(
+            primary.get("baseline_prediction_rows", {}).get("test", {}).get("global_prior", []),
+            target_coverage=0.9,
+            note="Offline selective execution using the global training failure prior.",
         ),
-        "fixed_task_prior_selective": _curve_at_target(
-            primary.get("baseline_coverage_curves", {}).get("fixed_task_prior", {}).get("test", []),
-            0.9,
+        "fixed_task_prior_selective": _selective_policy_metrics(
+            primary.get("baseline_prediction_rows", {}).get("test", {}).get("fixed_task_prior", []),
+            target_coverage=0.9,
+            note="Offline selective execution using per-suite/task training priors.",
         ),
     }
     for name in ("metadata_oracle_risk", "structured_progress_risk"):
         payload = model_variants.get(name, {})
-        comparison[f"{name}_selective"] = _curve_at_target(payload.get("coverage_curves", {}).get("test", []), 0.9)
+        comparison[f"{name}_selective"] = _selective_policy_metrics(
+            payload.get("prediction_rows", {}).get("test", []),
+            target_coverage=0.9,
+            note=f"Offline selective execution using `{name}` risk scores.",
+        )
+    comparison["adaptive_chunk_openpi_offline"] = _adaptive_chunk_metrics(primary_rows)
+    comparison["early_abort_on_no_progress_offline"] = _early_abort_metrics(primary_rows)
+    comparison["adaptive_chunk_plus_abort_offline"] = _adaptive_plus_abort_metrics(primary_rows)
     vision = model_variants.get("vision_language_risk", {})
     comparison["vision_language_risk_selective"] = {
         "status": vision.get("status", "blocked"),
@@ -449,6 +474,252 @@ def _curve_at_target(rows: Sequence[dict[str, Any]], target: float) -> dict[str,
         return {"status": "missing"}
     row = min(rows, key=lambda item: abs(float(item.get("target_coverage", 0.0)) - target))
     return {"status": "evaluated", **row}
+
+
+def _prediction_rows(examples: Sequence[OpenPIRiskExample], probs: Sequence[float]) -> list[dict[str, Any]]:
+    rows = []
+    for example, prob in zip(examples, probs):
+        feature_lookup = dict(zip(example.feature_names, example.features))
+        n_action_steps = int(round(float(feature_lookup.get("n_action_steps_scaled", 0.25)) * 20.0))
+        rows.append(
+            {
+                "run_id": example.run_id,
+                "episode_id": example.episode_id,
+                "suite": example.suite,
+                "task_id": example.task_id,
+                "label_failure": example.label_failure,
+                "label_timeout": example.label_timeout,
+                "predicted_risk": float(prob),
+                "episode_length": int(example.metadata.get("episode_length") or 0),
+                "n_action_steps": max(1, n_action_steps),
+                "prefix_no_progress_mean": float(feature_lookup.get("prefix_no_progress_mean", 0.0)),
+                "prefix_reward_sum": float(feature_lookup.get("prefix_reward_sum", 0.0)),
+            }
+        )
+    return rows
+
+
+def _direct_policy_metrics(rows: Sequence[dict[str, Any]], *, direct_failure_rate: Any) -> dict[str, Any]:
+    if not rows:
+        return {
+            "status": "evaluated",
+            "coverage": 1.0,
+            "task_completion_rate": None if direct_failure_rate is None else 1.0 - float(direct_failure_rate),
+            "failure_rate_attempted": direct_failure_rate,
+            "rejection_rate": 0.0,
+        }
+    outcomes = []
+    for row in rows:
+        success = int(row["label_failure"]) == 0
+        timeout = int(row.get("label_timeout", row["label_failure"])) == 1
+        length = int(row.get("episode_length", 0))
+        direct_queries = _direct_queries(row)
+        outcomes.append(
+            {
+                "success": success,
+                "failure": not success,
+                "timeout": timeout,
+                "abstained": False,
+                "utility": expected_utility(success=success, timeout=timeout, abstained=False, episode_length=length),
+                "policy_queries": direct_queries,
+                "direct_policy_queries": direct_queries,
+                "extra_policy_queries": 0,
+            }
+        )
+    return _policy_summary(outcomes, status="evaluated", note="Observed direct OpenPI test episodes.")
+
+
+def _selective_policy_metrics(rows: Sequence[dict[str, Any]], *, target_coverage: float, note: str) -> dict[str, Any]:
+    if not rows:
+        return {"status": "missing", "note": note}
+    total = len(rows)
+    attempted_count = max(1, min(total, round(total * target_coverage)))
+    ranked = sorted(rows, key=lambda row: float(row["predicted_risk"]))
+    attempted_ids = {(row["run_id"], row["episode_id"]) for row in ranked[:attempted_count]}
+    outcomes = []
+    threshold = max(float(row["predicted_risk"]) for row in ranked[:attempted_count])
+    for row in rows:
+        attempted = (row["run_id"], row["episode_id"]) in attempted_ids
+        success = attempted and int(row["label_failure"]) == 0
+        timeout = attempted and int(row.get("label_timeout", row["label_failure"])) == 1
+        length = int(row.get("episode_length", 0)) if attempted else 0
+        direct_queries = _direct_queries(row)
+        outcomes.append(
+            {
+                "success": success,
+                "failure": attempted and not success,
+                "timeout": timeout,
+                "abstained": not attempted,
+                "utility": expected_utility(success=success, timeout=timeout, abstained=not attempted, episode_length=length),
+                "policy_queries": direct_queries if attempted else 0,
+                "direct_policy_queries": direct_queries,
+                "extra_policy_queries": -direct_queries if not attempted else 0,
+            }
+        )
+    summary = _policy_summary(outcomes, status="evaluated", note=note)
+    summary["target_coverage"] = target_coverage
+    summary["threshold"] = threshold
+    return summary
+
+
+def _adaptive_chunk_metrics(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    outcomes = []
+    for row in rows:
+        success = int(row["label_failure"]) == 0
+        timeout = int(row.get("label_timeout", row["label_failure"])) == 1
+        length = int(row.get("episode_length", 0))
+        direct_queries = _direct_queries(row)
+        adaptive_queries = math.ceil(max(1, length) / _adaptive_horizon(float(row["predicted_risk"])))
+        extra_queries = adaptive_queries - direct_queries
+        outcomes.append(
+            {
+                "success": success,
+                "failure": not success,
+                "timeout": timeout,
+                "abstained": False,
+                "utility": expected_utility(
+                    success=success,
+                    timeout=timeout,
+                    abstained=False,
+                    episode_length=length,
+                    extra_policy_queries=max(0, extra_queries),
+                ),
+                "policy_queries": adaptive_queries,
+                "direct_policy_queries": direct_queries,
+                "extra_policy_queries": extra_queries,
+            }
+        )
+    return _policy_summary(
+        outcomes,
+        status="offline_counterfactual",
+        note="Risk changes estimated action horizon and policy-query overhead only; success labels are not resimulated.",
+    )
+
+
+def _early_abort_metrics(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    outcomes = []
+    for row in rows:
+        abort = _would_abort_no_progress(row)
+        success = (not abort) and int(row["label_failure"]) == 0
+        timeout = (not abort) and int(row.get("label_timeout", row["label_failure"])) == 1
+        original_length = int(row.get("episode_length", 0))
+        length = min(original_length, 10) if abort else original_length
+        direct_queries = _direct_queries(row)
+        outcomes.append(
+            {
+                "success": success,
+                "failure": (not abort) and not success,
+                "timeout": timeout,
+                "abstained": abort,
+                "utility": expected_utility(success=success, timeout=timeout, abstained=abort, episode_length=length),
+                "policy_queries": math.ceil(max(1, length) / max(1, int(row.get("n_action_steps", 5)))),
+                "direct_policy_queries": direct_queries,
+                "extra_policy_queries": 0,
+            }
+        )
+    return _policy_summary(
+        outcomes,
+        status="offline_counterfactual",
+        note="Aborts episodes whose first logged prefix has high no-progress; not a resimulated controller result.",
+    )
+
+
+def _adaptive_plus_abort_metrics(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    outcomes = []
+    for row in rows:
+        abort = _would_abort_no_progress(row)
+        success = (not abort) and int(row["label_failure"]) == 0
+        timeout = (not abort) and int(row.get("label_timeout", row["label_failure"])) == 1
+        original_length = int(row.get("episode_length", 0))
+        length = min(original_length, 10) if abort else original_length
+        direct_queries = _direct_queries(row)
+        adaptive_queries = math.ceil(max(1, length) / _adaptive_horizon(float(row["predicted_risk"])))
+        extra_queries = adaptive_queries - direct_queries
+        outcomes.append(
+            {
+                "success": success,
+                "failure": (not abort) and not success,
+                "timeout": timeout,
+                "abstained": abort,
+                "utility": expected_utility(
+                    success=success,
+                    timeout=timeout,
+                    abstained=abort,
+                    episode_length=length,
+                    extra_policy_queries=max(0, extra_queries),
+                ),
+                "policy_queries": adaptive_queries,
+                "direct_policy_queries": direct_queries,
+                "extra_policy_queries": extra_queries,
+            }
+        )
+    return _policy_summary(
+        outcomes,
+        status="offline_counterfactual",
+        note="Combines adaptive horizon overhead estimate with the same prefix no-progress abort rule.",
+    )
+
+
+def _policy_summary(outcomes: Sequence[dict[str, Any]], *, status: str, note: str) -> dict[str, Any]:
+    if not outcomes:
+        return {"status": "missing", "note": note}
+    total = len(outcomes)
+    success_values = [float(item["success"]) for item in outcomes]
+    failure_values = [float(item["failure"]) for item in outcomes]
+    timeout_values = [float(item["timeout"]) for item in outcomes]
+    abstain_values = [float(item["abstained"]) for item in outcomes]
+    utility_values = [float(item["utility"]) for item in outcomes]
+    query_values = [float(item["policy_queries"]) for item in outcomes]
+    extra_query_values = [float(item["extra_policy_queries"]) for item in outcomes]
+    return {
+        "status": status,
+        "note": note,
+        "episodes": total,
+        "coverage": 1.0 - sum(abstain_values) / total,
+        "task_completion_rate": sum(success_values) / total,
+        "failure_rate": sum(failure_values) / total,
+        "failure_rate_attempted": sum(failure_values) / max(1.0, total - sum(abstain_values)),
+        "timeout_rate": sum(timeout_values) / total,
+        "abstention_rate": sum(abstain_values) / total,
+        "rejection_rate": sum(abstain_values) / total,
+        "expected_utility": sum(utility_values) / total,
+        "mean_policy_queries": sum(query_values) / total,
+        "mean_extra_policy_queries": sum(extra_query_values) / total,
+        "policy_query_overhead": (sum(query_values) / total) / max(1e-9, sum(_direct_queries_from_outcome(item) for item in outcomes) / total),
+        "ci95": {
+            "task_completion_rate": bootstrap_ci(success_values, _mean_float, samples=500),
+            "failure_rate": bootstrap_ci(failure_values, _mean_float, samples=500),
+            "timeout_rate": bootstrap_ci(timeout_values, _mean_float, samples=500),
+            "abstention_rate": bootstrap_ci(abstain_values, _mean_float, samples=500),
+            "expected_utility": bootstrap_ci(utility_values, _mean_float, samples=500),
+        },
+    }
+
+
+def _direct_queries(row: Mapping[str, Any]) -> int:
+    return math.ceil(max(1, int(row.get("episode_length", 0))) / max(1, int(row.get("n_action_steps", 5))))
+
+
+def _direct_queries_from_outcome(outcome: Mapping[str, Any]) -> float:
+    return max(1.0, float(outcome.get("direct_policy_queries", outcome["policy_queries"])))
+
+
+def _adaptive_horizon(risk: float) -> int:
+    if risk < 0.35:
+        return 10
+    if risk < 0.65:
+        return 5
+    if risk < 0.85:
+        return 2
+    return 1
+
+
+def _would_abort_no_progress(row: Mapping[str, Any]) -> bool:
+    return float(row.get("prefix_no_progress_mean", 0.0)) >= 0.8 and float(row.get("prefix_reward_sum", 0.0)) <= 0.0
+
+
+def _mean_float(values: Sequence[float]) -> float:
+    return sum(float(value) for value in values) / len(values) if values else 0.0
 
 
 def _dataset_summary(examples: Sequence[OpenPIRiskExample]) -> dict[str, Any]:
@@ -505,18 +776,50 @@ def _variant_table(variants: dict[str, Any]) -> str:
 
 def _offline_policy_table(comparison: dict[str, Any]) -> str:
     lines = [
-        "| Policy | Status | Coverage | Task completion | Failure attempted | Rejection | Note |",
-        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+        "| Policy | Status | Coverage | Task completion | Failure attempted | Timeout | Abstain | Utility | Query overhead | Note |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for name, payload in comparison.items():
         status = str(payload.get("status", "unknown"))
-        note = str(payload.get("blocker", "") or "")
+        note = str(payload.get("blocker", "") or payload.get("note", "") or "")
         lines.append(
             f"| `{name}` | {status} | {_fmt(payload.get('coverage'))} | "
             f"{_fmt(payload.get('task_completion_rate'))} | {_fmt(payload.get('failure_rate_attempted'))} | "
-            f"{_fmt(payload.get('rejection_rate'))} | {note} |"
+            f"{_fmt(payload.get('timeout_rate'))} | {_fmt(payload.get('abstention_rate'))} | "
+            f"{_fmt(payload.get('expected_utility'))} | {_fmt(payload.get('policy_query_overhead'))} | {note} |"
         )
     return "\n".join(lines)
+
+
+def _offline_policy_ci_table(comparison: dict[str, Any]) -> str:
+    selected = [
+        "direct_openpi",
+        "fixed_task_prior_selective",
+        "structured_progress_risk_selective",
+        "metadata_oracle_risk_selective",
+        "adaptive_chunk_openpi_offline",
+        "early_abort_on_no_progress_offline",
+        "adaptive_chunk_plus_abort_offline",
+    ]
+    lines = [
+        "| Policy | Success CI | Failure CI | Timeout CI | Abstain CI | Utility CI |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for name in selected:
+        payload = comparison.get(name, {})
+        ci = payload.get("ci95", {}) if isinstance(payload, dict) else {}
+        lines.append(
+            f"| `{name}` | {_ci_fmt(ci.get('task_completion_rate'))} | {_ci_fmt(ci.get('failure_rate'))} | "
+            f"{_ci_fmt(ci.get('timeout_rate'))} | {_ci_fmt(ci.get('abstention_rate'))} | "
+            f"{_ci_fmt(ci.get('expected_utility'))} |"
+        )
+    return "\n".join(lines)
+
+
+def _ci_fmt(ci: Any) -> str:
+    if not isinstance(ci, dict) or ci.get("low") is None or ci.get("high") is None:
+        return "n/a"
+    return f"{float(ci['mean']):.3f} [{float(ci['low']):.3f}, {float(ci['high']):.3f}]"
 
 
 def _write_openpi_figures(summary: dict[str, Any]) -> None:

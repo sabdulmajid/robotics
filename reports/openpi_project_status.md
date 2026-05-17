@@ -66,14 +66,17 @@ Primary deployable model: `structured_progress_risk`, which excludes injected st
 
 At about 90% coverage on the test split:
 
-| Policy | Coverage | Task completion | Failure among attempts |
-| --- | ---: | ---: | ---: |
-| direct OpenPI | 1.000 | 0.821 | 0.179 |
-| fixed task prior selective | 0.900 | 0.771 | 0.144 |
-| structured progress selective | 0.900 | 0.756 | 0.160 |
-| metadata oracle selective | 0.900 | 0.821 | 0.088 |
+| Policy | Coverage | Task completion | Failure among attempts | Utility | Query overhead |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| direct OpenPI | 1.000 | 0.821 | 0.179 | 0.716 | 1.000 |
+| fixed task prior selective | 0.900 | 0.771 | 0.144 | 0.673 | 0.883 |
+| structured progress selective | 0.900 | 0.756 | 0.160 | 0.651 | 0.898 |
+| metadata oracle selective | 0.900 | 0.821 | 0.088 | 0.748 | 0.856 |
+| adaptive chunk offline | 1.000 | 0.821 | 0.179 | 0.716 | 0.997 |
+| early abort on no-progress offline | 0.970 | 0.796 | 0.179 | 0.689 | 0.944 |
+| adaptive chunk plus abort offline | 0.970 | 0.796 | 0.179 | 0.689 | 0.941 |
 
-Interpretation: there is exploitable risk structure, but the deployable structured model is not yet strong enough to beat fixed priors across all metrics. The metadata oracle shows the stress suite contains a strong signal; the next research step is replacing stressor metadata with observed VLM/world-model features.
+The adaptive/abort rows above are offline counterfactuals from logged episodes, not resimulated robot executions. Interpretation: there is exploitable risk structure, but the deployable structured model is not yet strong enough to beat fixed priors across all metrics. The metadata oracle shows the stress suite contains a strong signal; the next research step is replacing stressor metadata with observed VLM/world-model features.
 
 ## VLM And World-Model Integration
 
@@ -84,6 +87,8 @@ OpenPI is already the active VLA policy: it consumes RGB observations and langua
 3. `vision_language_risk` is represented in the risk summary, but remains `skipped` until frozen image/language embeddings are extracted.
 4. Prefix action norms, no-progress scores, action smoothness, and reward are already used as lightweight progress/world-model proxy features.
 5. The next model should compare fixed priors, structured progress, frozen VLM embeddings, and learned predictive dynamics at matched coverage.
+
+Feasibility check from this run: the completed rollout JSONL files do not contain saved frame paths, the repo Python environment has no cached SigLIP/DINOv2 checkpoint, and `transformers` could not load `google/siglip-base-patch16-224` from cache or Hugging Face. That is why VLM risk is not included in the current claim.
 
 ## Verification
 
