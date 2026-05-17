@@ -51,10 +51,12 @@ python -m risk_aware_skill_planning.cli openpi-libero-summarize --input datasets
 python scripts/openpi_libero_single_task_eval.py --dry-run
 sbatch slurm/openpi_libero_smoke.sbatch
 sbatch slurm/openpi_libero_official_smoke.sbatch
+SUITES="libero_spatial libero_goal" TASK_IDS="0 1 2" NUM_TRIALS=3 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 The official smoke starts OpenPI's policy server and runs one real `pi05_libero` episode through the filtered LIBERO evaluator.
+The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training.
 
 Tracked first-rollout artifacts:
 
