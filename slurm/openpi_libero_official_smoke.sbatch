@@ -23,10 +23,14 @@ VIDEO_OUT="${REPO_ROOT}/videos/openpi_libero_official_smoke_${JOB_ID}"
 SUMMARY_OUT="${REPO_ROOT}/reports/openpi_libero_official_smoke_summary.json"
 
 mkdir -p "${REPO_ROOT}/outputs/openpi_libero" "${REPO_ROOT}/datasets/openpi_libero_rollouts" "${VIDEO_OUT}"
+mkdir -p "${REPO_ROOT}/checkpoints/openpi_cache" "${REPO_ROOT}/.cache"
 
 export UV_PYTHON_INSTALL_DIR="${REPO_ROOT}/.uv-python"
 export UV_CACHE_DIR="${REPO_ROOT}/.uv-cache"
 export UV_LINK_MODE=copy
+export OPENPI_DATA_HOME="${REPO_ROOT}/checkpoints/openpi_cache"
+export XDG_CACHE_HOME="${REPO_ROOT}/.cache"
+export HF_HOME="${REPO_ROOT}/.cache/huggingface"
 export LIBERO_CONFIG_PATH="${REPO_ROOT}/outputs/openpi_libero/libero_config"
 export MUJOCO_GL=egl
 export PYOPENGL_PLATFORM=egl
