@@ -1,0 +1,20 @@
+experiment_id: openpi_libero_smoke
+openpi:
+  root: external/openpi
+  policy_config: pi05_libero
+  checkpoint: gs://openpi-assets/checkpoints/pi05_libero/
+  server_host: 127.0.0.1
+  server_port: 18000
+libero:
+  suites: [libero_spatial]
+  task_ids: [0]
+  episodes_per_task: 1
+  seed: 0
+  n_action_steps: 10
+  stressors: [none]
+  stressor_severity: 0.0
+mode: direct_openpi
+outputs:
+  output_dir: outputs/openpi_libero
+  rollout_dir: datasets/openpi_libero_rollouts
+  video_dir: videos

@@ -78,6 +78,8 @@ Current OpenPI reports:
 - [Selective supervisor rollout summary](reports/openpi_libero_rollout_summary_10097.json)
 - [Adaptive supervisor rollout summary](reports/openpi_libero_rollout_summary_10098.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
+- [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
+- [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)
 
 ## Why This Exists
 
@@ -184,6 +186,9 @@ python -m risk_aware_skill_planning.cli dry-run --config configs/toy_oracle_vali
 python -m risk_aware_skill_planning.cli toy-eval --config configs/toy_oracle_validation.yaml
 python -m risk_aware_skill_planning.cli toy-risk-eval --config configs/toy_risk_learning.yaml
 python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml
+python scripts/collect_openpi_libero.py --config configs/openpi/libero_collect_baseline.yaml
+python scripts/eval_openpi_supervisor.py --config configs/openpi/eval_supervisor.yaml
+python scripts/summarize_openpi_results.py --run-dir reports
 python -m risk_aware_skill_planning.cli toy-trace \
   --scenario direct_pick_blocked_by_distractor \
   --planner-mode oracle_risk \
@@ -215,6 +220,8 @@ Expected verification:
 | [src/risk_aware_skill_planning/evaluation/metrics.py](src/risk_aware_skill_planning/evaluation/metrics.py) | Coverage-aware success, rejection, catastrophic failure, utility, and CI metrics. |
 | [src/risk_aware_skill_planning/evaluation/risk_eval.py](src/risk_aware_skill_planning/evaluation/risk_eval.py) | Toy learned-risk training, calibration, skill metrics, and planner impact evaluation. |
 | [src/risk_aware_skill_planning/openpi_libero](src/risk_aware_skill_planning/openpi_libero) | OpenPI/LIBERO setup boundary, rollout schema, summarization, and supervisor decisions. |
+| [src/risk_aware_skill_planning/backends/openpi](src/risk_aware_skill_planning/backends/openpi) | OpenPI backend configs, stressor validation, command construction, action-horizon policy, and log-schema validation. |
+| [src/risk_aware_skill_planning/supervision](src/risk_aware_skill_planning/supervision) | Runtime supervisor decisions, adaptive chunking, and no-progress windows. |
 | [src/risk_aware_skill_planning/risk/openpi_dataset.py](src/risk_aware_skill_planning/risk/openpi_dataset.py) | Converts OpenPI/LIBERO JSONL episodes into risk examples with train/calibration/test splits. |
 | [src/risk_aware_skill_planning/evaluation/openpi_risk.py](src/risk_aware_skill_planning/evaluation/openpi_risk.py) | Trains/calibrates the OpenPI risk critic and writes the current robot-policy report. |
 | [scripts/openpi_libero_single_task_eval.py](scripts/openpi_libero_single_task_eval.py) | Python 3.8-compatible OpenPI/LIBERO evaluator with stressors, JSONL logging, videos, and runtime risk-supervisor modes. |

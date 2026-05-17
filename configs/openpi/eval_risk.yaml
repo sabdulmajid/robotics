@@ -1,0 +1,5 @@
+experiment_id: openpi_eval_risk
+risk_summary: reports/openpi_libero_risk_summary.json
+outputs:
+  report_path: reports/openpi_libero_risk_planning.md
+  summary_path: reports/openpi_libero_risk_summary.json

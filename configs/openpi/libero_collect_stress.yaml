@@ -1,0 +1,18 @@
+experiment_id: openpi_libero_collect_stress
+openpi:
+  root: external/openpi
+  policy_config: pi05_libero
+  checkpoint: gs://openpi-assets/checkpoints/pi05_libero/
+libero:
+  suites: [libero_spatial]
+  task_ids: [0, 1, 2]
+  episodes_per_task: 3
+  seed: 7
+  n_action_steps: 5
+  stressors: [occlusion]
+  stressor_severity: 1.0
+mode: direct_openpi
+outputs:
+  output_dir: outputs/openpi_libero
+  rollout_dir: datasets/openpi_libero_rollouts
+  video_dir: videos
