@@ -61,11 +61,14 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${OPENPI_ROOT}"
-if [[ ! -x examples/libero/.venv/bin/python ]]; then
-  uv venv --python 3.8 examples/libero/.venv
-fi
-uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
-uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
+(
+  flock 9
+  if [[ ! -x examples/libero/.venv/bin/python ]]; then
+    uv venv --python 3.8 examples/libero/.venv
+  fi
+  uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
+  uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
+) 9>"${REPO_ROOT}/outputs/openpi_libero/openpi_env.lock"
 
 uv run scripts/serve_policy.py --env LIBERO --port "${PORT}" > "${SERVER_LOG}" 2>&1 &
 SERVER_PID=$!
