@@ -19,6 +19,7 @@ JOB_ID="${SLURM_JOB_ID:-local}"
 PORT=$((18000 + (${SLURM_JOB_ID:-10000} % 20000)))
 SERVER_LOG="${REPO_ROOT}/outputs/openpi_libero/policy_server_${JOB_ID}.log"
 SUMMARY_OUT="${REPO_ROOT}/reports/openpi_libero_rollout_summary_${JOB_ID}.json"
+ENV_LOCK_DIR="${REPO_ROOT}/outputs/openpi_libero/openpi_env.lockdir"
 
 # Override these at submit time, for example:
 #   SUITES="libero_spatial libero_goal" TASK_IDS="0 1 2" NUM_TRIALS=3 sbatch ...
@@ -53,6 +54,10 @@ export XLA_PYTHON_CLIENT_PREALLOCATE=false
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.80
 
 cleanup() {
+  if [[ "${ENV_LOCK_HELD:-0}" == "1" ]]; then
+    rmdir "${ENV_LOCK_DIR}" 2>/dev/null || true
+    ENV_LOCK_HELD=0
+  fi
   if [[ -n "${SERVER_PID:-}" ]] && kill -0 "${SERVER_PID}" 2>/dev/null; then
     kill "${SERVER_PID}" 2>/dev/null || true
     wait "${SERVER_PID}" 2>/dev/null || true
@@ -61,14 +66,19 @@ cleanup() {
 trap cleanup EXIT
 
 cd "${OPENPI_ROOT}"
-(
-  flock 9
-  if [[ ! -x examples/libero/.venv/bin/python ]]; then
-    uv venv --python 3.8 examples/libero/.venv
-  fi
-  uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
-  uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
-) 9>"${REPO_ROOT}/outputs/openpi_libero/openpi_env.lock"
+ENV_LOCK_HELD=0
+while ! mkdir "${ENV_LOCK_DIR}" 2>/dev/null; do
+  echo "Waiting for OpenPI env setup lock: ${ENV_LOCK_DIR}"
+  sleep 5
+done
+ENV_LOCK_HELD=1
+if [[ ! -x examples/libero/.venv/bin/python ]]; then
+  uv venv --python 3.8 examples/libero/.venv
+fi
+uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
+uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
+rmdir "${ENV_LOCK_DIR}" 2>/dev/null || true
+ENV_LOCK_HELD=0
 
 uv run scripts/serve_policy.py --env LIBERO --port "${PORT}" > "${SERVER_LOG}" 2>&1 &
 SERVER_PID=$!
