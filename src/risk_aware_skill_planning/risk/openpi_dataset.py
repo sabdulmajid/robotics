@@ -74,6 +74,7 @@ def expand_input_paths(patterns: Sequence[str]) -> list[Path]:
 
 def load_openpi_risk_examples(paths: Sequence[str | Path], *, prefix_steps: int = 10) -> list[OpenPIRiskExample]:
     examples: list[OpenPIRiskExample] = []
+    seen: set[tuple[str, str]] = set()
     for path in paths:
         with Path(path).open("r", encoding="utf-8") as handle:
             for line_number, line in enumerate(handle, start=1):
@@ -84,7 +85,12 @@ def load_openpi_risk_examples(paths: Sequence[str | Path], *, prefix_steps: int 
                     episode = json.loads(stripped)
                 except json.JSONDecodeError as exc:
                     raise ValueError(f"Invalid JSON on line {line_number} of {path}") from exc
-                examples.append(example_from_episode(episode, source_path=str(path), prefix_steps=prefix_steps))
+                example = example_from_episode(episode, source_path=str(path), prefix_steps=prefix_steps)
+                key = (example.run_id, example.episode_id)
+                if key in seen:
+                    continue
+                seen.add(key)
+                examples.append(example)
     return examples
 
 
@@ -149,18 +155,29 @@ def split_examples(
     train_fraction: float = 0.6,
     calibration_fraction: float = 0.2,
 ) -> dict[str, list[OpenPIRiskExample]]:
-    items = sorted(examples, key=lambda example: (example.run_id, example.episode_id))
-    n = len(items)
-    train_end = int(n * train_fraction)
-    calibration_end = train_end + int(n * calibration_fraction)
-    if n >= 3:
-        train_end = max(1, min(train_end, n - 2))
-        calibration_end = max(train_end + 1, min(calibration_end, n - 1))
-    return {
-        "train": list(items[:train_end]),
-        "calibration": list(items[train_end:calibration_end]),
-        "test": list(items[calibration_end:]),
-    }
+    splits = {"train": [], "calibration": [], "test": []}
+    for label in (0, 1):
+        items = sorted(
+            [example for example in examples if example.label_failure == label],
+            key=lambda example: (example.run_id, example.episode_id),
+        )
+        n = len(items)
+        if n == 0:
+            continue
+        if n == 1:
+            splits["train"].extend(items)
+            continue
+        if n == 2:
+            splits["train"].append(items[0])
+            splits["test"].append(items[1])
+            continue
+        train_end = max(1, int(n * train_fraction))
+        calibration_end = max(train_end + 1, train_end + int(n * calibration_fraction))
+        calibration_end = min(calibration_end, n - 1)
+        splits["train"].extend(items[:train_end])
+        splits["calibration"].extend(items[train_end:calibration_end])
+        splits["test"].extend(items[calibration_end:])
+    return {name: sorted(items, key=lambda example: (example.run_id, example.episode_id)) for name, items in splits.items()}
 
 
 def class_balance(examples: Sequence[OpenPIRiskExample]) -> dict[str, float | int]:

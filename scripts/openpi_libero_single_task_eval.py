@@ -85,6 +85,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--mode", default="direct_openpi")
     parser.add_argument("--policy-config", default="pi05_libero")
     parser.add_argument("--checkpoint", default="gs://openpi-assets/checkpoints/pi05_libero/")
+    parser.add_argument("--risk-summary")
+    parser.add_argument("--low-risk-threshold", type=float, default=0.35)
+    parser.add_argument("--medium-risk-threshold", type=float, default=0.65)
+    parser.add_argument("--high-risk-threshold", type=float, default=0.85)
+    parser.add_argument("--abstain-threshold", type=float, default=0.95)
     parser.add_argument("--stressor-name", default="none")
     parser.add_argument("--stressor-severity", type=float, default=0.0)
     parser.add_argument("--save-images", action="store_true")
@@ -247,6 +252,12 @@ def run_episode(
     total_reward = 0.0
     previous_obs = None
     delayed_action = None
+    risk_summary = load_risk_summary(args.risk_summary)
+    current_action_horizon = int(args.replan_steps)
+    latest_predicted_risk = None
+    latest_supervisor_decision = None
+    terminal_label = None
+    failure_label = None
 
     while t < max_steps + args.num_steps_wait:
         try:
@@ -266,6 +277,18 @@ def run_episode(
             replay_images.append(img)
 
             if not action_plan:
+                latest_predicted_risk = predict_runtime_risk(
+                    risk_summary,
+                    args=args,
+                    task_description=task_description,
+                    step_logs=step_logs,
+                )
+                latest_supervisor_decision = decide_runtime_supervisor(args, latest_predicted_risk)
+                if latest_supervisor_decision["action"] == "abstain":
+                    terminal_label = "abstained"
+                    failure_label = "abstained"
+                    break
+                current_action_horizon = int(latest_supervisor_decision["n_action_steps"])
                 element = {
                     "observation/image": img,
                     "observation/wrist_image": wrist_img,
@@ -280,16 +303,16 @@ def run_episode(
                 }
                 action_chunk = client.infer(element)["actions"]
                 action_chunk_length = len(action_chunk)
-                if action_chunk_length < args.replan_steps:
+                if action_chunk_length < current_action_horizon:
                     raise RuntimeError(
-                        "Policy predicted {0} actions, but replan_steps={1}".format(
-                            action_chunk_length, args.replan_steps
+                        "Policy predicted {0} actions, but requested horizon={1}".format(
+                            action_chunk_length, current_action_horizon
                         )
                     )
-                action_plan.extend(action_chunk[: args.replan_steps])
+                action_plan.extend(action_chunk[:current_action_horizon])
                 action_queries += 1
 
-            selected_action_index = int(args.replan_steps - len(action_plan))
+            selected_action_index = int(current_action_horizon - len(action_plan))
             action = np_module.asarray(action_plan.popleft())
             action, delayed_action = apply_action_stressor(
                 action,
@@ -328,11 +351,11 @@ def run_episode(
                         "policy_queries": int(action_queries),
                     },
                     "selected_action_index": selected_action_index,
-                    "n_action_steps": int(args.replan_steps),
-                    "predicted_risk": None,
-                    "calibrated_risk": None,
-                    "action_horizon": int(args.replan_steps),
-                    "supervisor_decision": None,
+                    "n_action_steps": int(current_action_horizon),
+                    "predicted_risk": latest_predicted_risk,
+                    "calibrated_risk": latest_predicted_risk,
+                    "action_horizon": int(current_action_horizon),
+                    "supervisor_decision": latest_supervisor_decision,
                     "no_progress_score": no_progress_score,
                     "reward": float(reward),
                     "done": bool(done),
@@ -349,8 +372,10 @@ def run_episode(
             logging.exception("Episode %s failed at simulator timestep %s", episode_idx, t)
             break
 
-    terminal_label = "success" if done else "runtime_error" if exception_text else "timeout"
-    failure_label = "success" if done else "policy_invalid_action" if exception_text else "timeout"
+    if terminal_label is None:
+        terminal_label = "success" if done else "runtime_error" if exception_text else "timeout"
+    if failure_label is None:
+        failure_label = "success" if done else "policy_invalid_action" if exception_text else "timeout"
     video_path = None
     if replay_images:
         suffix = "success" if done else "failure"
@@ -373,6 +398,7 @@ def run_episode(
             "episode_index": int(episode_idx),
             "init_state_index": int(init_state_index),
             "action_queries": int(action_queries),
+            "risk_summary": args.risk_summary,
             "exception": exception_text,
             "video_path": str(video_path) if video_path is not None else None,
         }
@@ -551,6 +577,119 @@ def compute_no_progress_score(previous_obs: Any, obs: Dict[str, Any], np_module:
         return None
     delta = float(np_module.linalg.norm(np_module.asarray(obs["robot0_eef_pos"]) - np_module.asarray(previous_obs["robot0_eef_pos"])))
     return max(0.0, min(1.0, 1.0 - delta / 0.01))
+
+
+def load_risk_summary(path: Optional[str]) -> Optional[Dict[str, Any]]:
+    if not path:
+        return None
+    with pathlib.Path(path).open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def predict_runtime_risk(
+    risk_summary: Optional[Dict[str, Any]],
+    *,
+    args: argparse.Namespace,
+    task_description: str,
+    step_logs: List[Dict[str, Any]],
+) -> Optional[float]:
+    if not risk_summary or not risk_summary.get("ok") or "normalization" not in risk_summary:
+        return None
+    features = runtime_feature_vector(args, task_description, step_logs)
+    feature_names = risk_summary["feature_names"]
+    weights = risk_summary["weights"]
+    mean = risk_summary["normalization"]["mean"]
+    std = risk_summary["normalization"]["std"]
+    temperature = max(float(risk_summary["calibration"]["temperature"]), 1e-6)
+    logit = 0.0
+    for name, value in zip(feature_names, features):
+        sigma = max(float(std[name]), 1e-6)
+        logit += float(weights[name]) * ((float(value) - float(mean[name])) / sigma)
+    return sigmoid(logit / temperature)
+
+
+def runtime_feature_vector(args: argparse.Namespace, task_description: str, step_logs: List[Dict[str, Any]]) -> List[float]:
+    prefix = step_logs[-10:] if step_logs else []
+    action_norms = [float(step.get("action_norm", 0.0) or 0.0) for step in prefix]
+    smoothness = [float(step.get("action_smoothness", 0.0) or 0.0) for step in prefix]
+    no_progress = [float(step.get("no_progress_score", 0.0) or 0.0) for step in prefix]
+    rewards = [float(step.get("reward", 0.0) or 0.0) for step in prefix]
+    stressor_name = args.stressor_name
+    sev = max(0.0, min(1.0, float(args.stressor_severity)))
+    return [
+        1.0,
+        int(args.task_id) / 100.0,
+        hash_to_unit(args.task_suite_name),
+        hash_to_unit(task_description),
+        int(args.replan_steps) / 20.0,
+        sev,
+        float(stressor_name in ("", "none", "direct")),
+        float(stressor_name == "occlusion"),
+        float(stressor_name == "action_noise"),
+        float(stressor_name == "gaussian_noise"),
+        float(stressor_name == "brightness"),
+        float(stressor_name == "action_delay"),
+        float(stressor_name == "action_precision"),
+        (sum(action_norms) / len(action_norms) if action_norms else 0.0) / 5.0,
+        (max(action_norms) if action_norms else 0.0) / 5.0,
+        (sum(smoothness) / len(smoothness) if smoothness else 0.0) / 2.0,
+        sum(no_progress) / len(no_progress) if no_progress else 0.0,
+        sum(rewards),
+    ]
+
+
+def decide_runtime_supervisor(args: argparse.Namespace, predicted_risk: Optional[float]) -> Dict[str, Any]:
+    if predicted_risk is None or args.mode not in ("selective_openpi", "adaptive_chunk_openpi", "no_progress_replan"):
+        return {
+            "action": args.mode,
+            "n_action_steps": int(args.replan_steps),
+            "reason": "no_risk_intervention",
+            "predicted_risk": predicted_risk,
+        }
+    if args.mode == "selective_openpi" and predicted_risk >= args.abstain_threshold:
+        return {
+            "action": "abstain",
+            "n_action_steps": 1,
+            "reason": "risk_exceeds_abstain_threshold",
+            "predicted_risk": predicted_risk,
+        }
+    if args.mode == "adaptive_chunk_openpi":
+        if predicted_risk < args.low_risk_threshold:
+            horizon, reason = 10, "low_risk_default_horizon"
+        elif predicted_risk < args.medium_risk_threshold:
+            horizon, reason = 5, "medium_risk_medium_horizon"
+        elif predicted_risk < args.high_risk_threshold:
+            horizon, reason = 2, "high_risk_short_horizon"
+        else:
+            horizon, reason = 1, "extreme_risk_single_step"
+        return {
+            "action": "adaptive_chunk_openpi",
+            "n_action_steps": horizon,
+            "reason": reason,
+            "predicted_risk": predicted_risk,
+        }
+    return {
+        "action": args.mode,
+        "n_action_steps": int(args.replan_steps),
+        "reason": "risk_scored_no_horizon_change",
+        "predicted_risk": predicted_risk,
+    }
+
+
+def hash_to_unit(value: str) -> float:
+    import hashlib
+
+    digest = hashlib.sha1(value.encode("utf-8")).hexdigest()
+    number = int(digest[:8], 16)
+    return (number / 0xFFFFFFFF) * 2.0 - 1.0
+
+
+def sigmoid(value: float) -> float:
+    if value >= 0:
+        z = math.exp(-value)
+        return 1.0 / (1.0 + z)
+    z = math.exp(value)
+    return z / (1.0 + z)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,458 @@
+{
+  "baselines": {
+    "fixed_task_prior": {
+      "calibration": {
+        "auprc": 0.6666666666666666,
+        "auroc": 0.3125,
+        "brier": 0.30584490740740744,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.3680555555555556,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.8390586367855953,
+        "positive_rate": 0.3333333333333333
+      },
+      "test": {
+        "auprc": 1.0,
+        "auroc": 1.0,
+        "brier": 0.12065972222222222,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.3125,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.4005437767912483,
+        "positive_rate": 0.3333333333333333
+      },
+      "train": {
+        "auprc": 0.7404151404151403,
+        "auroc": 0.6527777777777778,
+        "brier": 0.20601851851851852,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.0,
+        "examples": 18,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.5982478822611925,
+        "positive_rate": 0.3333333333333333
+      }
+    },
+    "global_prior": {
+      "calibration": {
+        "auprc": 1.0,
+        "auroc": 0.5,
+        "brier": 0.22222222222222224,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.0,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.6365141682948128,
+        "positive_rate": 0.3333333333333333
+      },
+      "test": {
+        "auprc": 1.0,
+        "auroc": 0.5,
+        "brier": 0.22222222222222224,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.0,
+        "examples": 6,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.6365141682948128,
+        "positive_rate": 0.3333333333333333
+      },
+      "train": {
+        "auprc": 1.0,
+        "auroc": 0.5,
+        "brier": 0.2222222222222222,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.0,
+        "examples": 18,
+        "failure_rate_attempted": 0.3333333333333333,
+        "nll": 0.6365141682948127,
+        "positive_rate": 0.3333333333333333
+      }
+    }
+  },
+  "calibration": {
+    "method": "temperature_scaling_grid",
+    "temperature": 5.0,
+    "threshold": 0.8
+  },
+  "class_balance": {
+    "all": {
+      "examples": 30,
+      "failure_rate": 0.3333333333333333,
+      "failures": 10,
+      "timeout_rate": 0.3333333333333333,
+      "timeouts": 10
+    },
+    "calibration": {
+      "examples": 6,
+      "failure_rate": 0.3333333333333333,
+      "failures": 2,
+      "timeout_rate": 0.3333333333333333,
+      "timeouts": 2
+    },
+    "test": {
+      "examples": 6,
+      "failure_rate": 0.3333333333333333,
+      "failures": 2,
+      "timeout_rate": 0.3333333333333333,
+      "timeouts": 2
+    },
+    "train": {
+      "examples": 18,
+      "failure_rate": 0.3333333333333333,
+      "failures": 6,
+      "timeout_rate": 0.3333333333333333,
+      "timeouts": 6
+    }
+  },
+  "feature_names": [
+    "bias",
+    "task_id_scaled",
+    "suite_hash",
+    "language_hash",
+    "n_action_steps_scaled",
+    "stressor_severity",
+    "stressor_none",
+    "stressor_occlusion",
+    "stressor_action_noise",
+    "stressor_gaussian_noise",
+    "stressor_brightness",
+    "stressor_action_delay",
+    "stressor_action_precision",
+    "prefix_action_norm_mean",
+    "prefix_action_norm_max",
+    "prefix_action_smoothness_mean",
+    "prefix_no_progress_mean",
+    "prefix_reward_sum"
+  ],
+  "input_paths": [
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10094.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10095.jsonl",
+    "datasets/openpi_libero_rollouts/openpi_rollouts_10096.jsonl"
+  ],
+  "metrics": {
+    "calibration": {
+      "auprc": 1.0,
+      "auroc": 1.0,
+      "brier": 0.17105076744080885,
+      "coverage_at_threshold": 0.6666666666666666,
+      "ece": 0.3589791031335921,
+      "examples": 6,
+      "failure_rate_attempted": 0.0,
+      "nll": 0.5277008650312814,
+      "positive_rate": 0.3333333333333333,
+      "reliability_bins": [
+        {
+          "bin_high": 0.1,
+          "bin_low": 0.0,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.2,
+          "bin_low": 0.1,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.3,
+          "bin_low": 0.2,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.4,
+          "bin_low": 0.3,
+          "count": 3,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.34184775505457127
+        },
+        {
+          "bin_high": 0.5,
+          "bin_low": 0.4,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.6,
+          "bin_low": 0.5,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.7,
+          "bin_low": 0.6,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.8,
+          "bin_low": 0.7,
+          "count": 1,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.7834610554311091
+        },
+        {
+          "bin_high": 0.9,
+          "bin_low": 0.8,
+          "count": 2,
+          "empirical_failure_rate": 1.0,
+          "mean_predicted_risk": 0.8275648508966351
+        },
+        {
+          "bin_high": 1.0,
+          "bin_low": 0.9,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        }
+      ]
+    },
+    "test": {
+      "auprc": 0.75,
+      "auroc": 0.75,
+      "brier": 0.43167604432835865,
+      "coverage_at_threshold": 0.6666666666666666,
+      "ece": 0.4654797675593596,
+      "examples": 6,
+      "failure_rate_attempted": 0.25,
+      "nll": 1.1221286498421035,
+      "positive_rate": 0.3333333333333333,
+      "reliability_bins": [
+        {
+          "bin_high": 0.1,
+          "bin_low": 0.0,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.2,
+          "bin_low": 0.1,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.3,
+          "bin_low": 0.2,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.4,
+          "bin_low": 0.3,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.5,
+          "bin_low": 0.4,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.6,
+          "bin_low": 0.5,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.7,
+          "bin_low": 0.6,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.8,
+          "bin_low": 0.7,
+          "count": 4,
+          "empirical_failure_rate": 0.25,
+          "mean_predicted_risk": 0.7887946317942122
+        },
+        {
+          "bin_high": 0.9,
+          "bin_low": 0.8,
+          "count": 2,
+          "empirical_failure_rate": 0.5,
+          "mean_predicted_risk": 0.8188500390896545
+        },
+        {
+          "bin_high": 1.0,
+          "bin_low": 0.9,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        }
+      ]
+    },
+    "train": {
+      "auprc": 1.0,
+      "auroc": 1.0,
+      "brier": 0.08173013102159599,
+      "coverage_at_threshold": 0.6666666666666666,
+      "ece": 0.2778765558170031,
+      "examples": 18,
+      "failure_rate_attempted": 0.0,
+      "nll": 0.3297607058003171,
+      "positive_rate": 0.3333333333333333,
+      "reliability_bins": [
+        {
+          "bin_high": 0.1,
+          "bin_low": 0.0,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.2,
+          "bin_low": 0.1,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.3,
+          "bin_low": 0.2,
+          "count": 2,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.2872449057627803
+        },
+        {
+          "bin_high": 0.4,
+          "bin_low": 0.3,
+          "count": 10,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.33097891332855056
+        },
+        {
+          "bin_high": 0.5,
+          "bin_low": 0.4,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.6,
+          "bin_low": 0.5,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.7,
+          "bin_low": 0.6,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.8,
+          "bin_low": 0.7,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        },
+        {
+          "bin_high": 0.9,
+          "bin_low": 0.8,
+          "count": 6,
+          "empirical_failure_rate": 1.0,
+          "mean_predicted_risk": 0.8137501566841685
+        },
+        {
+          "bin_high": 1.0,
+          "bin_low": 0.9,
+          "count": 0,
+          "empirical_failure_rate": 0.0,
+          "mean_predicted_risk": 0.0
+        }
+      ]
+    }
+  },
+  "model": "logistic_state_action_stress_risk",
+  "normalization": {
+    "mean": {
+      "bias": 1.0,
+      "language_hash": -0.14820142479235243,
+      "n_action_steps_scaled": 0.25,
+      "prefix_action_norm_max": 0.2948717031712303,
+      "prefix_action_norm_mean": 0.24977980993034007,
+      "prefix_action_smoothness_mean": 0.13236222761984034,
+      "prefix_no_progress_mean": 0.300554174042394,
+      "prefix_reward_sum": 0.0,
+      "stressor_action_delay": 0.0,
+      "stressor_action_noise": 0.3333333333333333,
+      "stressor_action_precision": 0.0,
+      "stressor_brightness": 0.0,
+      "stressor_gaussian_noise": 0.0,
+      "stressor_none": 0.3333333333333333,
+      "stressor_occlusion": 0.3333333333333333,
+      "stressor_severity": 0.5333333333333333,
+      "suite_hash": -0.8565257670955094,
+      "task_id_scaled": 0.007777777777777778
+    },
+    "std": {
+      "bias": 1e-06,
+      "language_hash": 0.4645941964895949,
+      "n_action_steps_scaled": 1e-06,
+      "prefix_action_norm_max": 0.032809787082989775,
+      "prefix_action_norm_mean": 0.01380789271026198,
+      "prefix_action_smoothness_mean": 0.10757002370037615,
+      "prefix_no_progress_mean": 0.15262826869061033,
+      "prefix_reward_sum": 1e-06,
+      "stressor_action_delay": 1e-06,
+      "stressor_action_noise": 0.4714045207910317,
+      "stressor_action_precision": 1e-06,
+      "stressor_brightness": 1e-06,
+      "stressor_gaussian_noise": 1e-06,
+      "stressor_none": 0.4714045207910317,
+      "stressor_occlusion": 0.4714045207910317,
+      "stressor_severity": 0.39440531887330776,
+      "suite_hash": 1e-06,
+      "task_id_scaled": 0.007856742013183862
+    }
+  },
+  "ok": true,
+  "prefix_steps": 10,
+  "supervisor_offline": {
+    "interpretation": "Episodes with calibrated p_failure >= threshold are abstained in this offline coverage analysis.",
+    "mode": "selective_openpi",
+    "test_coverage": 0.6666666666666666,
+    "test_failure_rate_attempted": 0.25,
+    "threshold": 0.8,
+    "threshold_source": "calibration_split"
+  },
+  "weights": {
+    "bias": 0.0,
+    "language_hash": 0.3998451358293495,
+    "n_action_steps_scaled": 0.0,
+    "prefix_action_norm_max": -0.7991727072005886,
+    "prefix_action_norm_mean": -0.6161597674230448,
+    "prefix_action_smoothness_mean": -0.7301002215937336,
+    "prefix_no_progress_mean": 0.17574158136216006,
+    "prefix_reward_sum": 0.0,
+    "stressor_action_delay": 0.0,
+    "stressor_action_noise": -0.8855966952381246,
+    "stressor_action_precision": 0.0,
+    "stressor_brightness": 0.0,
+    "stressor_gaussian_noise": 0.0,
+    "stressor_none": -1.1862472959845538,
+    "stressor_occlusion": 2.0718439912226834,
+    "stressor_severity": 1.4947023285376773,
+    "suite_hash": 0.0,
+    "task_id_scaled": -0.21616633825123874
+  }
+}

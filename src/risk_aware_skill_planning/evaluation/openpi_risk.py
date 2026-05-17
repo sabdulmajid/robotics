@@ -37,10 +37,18 @@ def run_openpi_risk_training(
         summary["ok"] = False
         summary["blocker"] = "Need at least three examples and both success/failure labels to train a risk critic"
         return summary
+    if len({example.label_failure for example in splits["train"]}) < 2:
+        summary["ok"] = False
+        summary["blocker"] = "Training split needs both success and failure examples; collect more failure-rich stress rollouts"
+        return summary
+    calibration_items = splits["calibration"]
+    if len({example.label_failure for example in calibration_items}) < 2:
+        calibration_items = splits["train"]
+        summary["calibration_warning"] = "Calibration split lacked both classes; reused train split for preliminary calibration"
     model = train_logistic_risk_model(splits["train"])
-    calibrated = calibrate_temperature(model, splits["calibration"])
-    calibration_probs = predict_examples(calibrated, splits["calibration"])
-    calibration_labels = [example.label_failure for example in splits["calibration"]]
+    calibrated = calibrate_temperature(model, calibration_items)
+    calibration_probs = predict_examples(calibrated, calibration_items)
+    calibration_labels = [example.label_failure for example in calibration_items]
     threshold = choose_threshold(calibration_labels, calibration_probs)
     split_metrics = {}
     baseline_metrics = {"global_prior": {}, "fixed_task_prior": {}}
@@ -71,6 +79,10 @@ def run_openpi_risk_training(
                 "threshold": threshold,
             },
             "weights": dict(zip(calibrated.feature_names, calibrated.weights)),
+            "normalization": {
+                "mean": dict(zip(calibrated.feature_names, calibrated.mean)),
+                "std": dict(zip(calibrated.feature_names, calibrated.std)),
+            },
             "metrics": split_metrics,
             "baselines": baseline_metrics,
             "supervisor_offline": {
@@ -90,12 +102,21 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
     Path(summary_path).parent.mkdir(parents=True, exist_ok=True)
     Path(report_path).parent.mkdir(parents=True, exist_ok=True)
     Path(summary_path).write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
+    test_metrics = summary.get("metrics", {}).get("test", {})
+    fixed_test = summary.get("baselines", {}).get("fixed_task_prior", {}).get("test", {})
+    global_test = summary.get("baselines", {}).get("global_prior", {}).get("test", {})
+    calibration = summary.get("calibration", {})
+    supervisor = summary.get("supervisor_offline", {})
     lines = [
         "# OpenPI/LIBERO Risk Training",
         "",
         f"Status: `{'PASS' if summary.get('ok') else 'BLOCKED'}`",
         "",
+        "This report is the current robot-foundation-policy checkpoint for the project. OpenPI `pi05_libero` is used as the vision-language-action policy, LIBERO supplies the manipulation tasks, and this layer learns a rollout-level failure-risk model used for selective execution and adaptive action chunking.",
+        "",
         "## Dataset",
+        "",
+        "The risk dataset is built from direct OpenPI/LIBERO rollouts. Each row is one episode converted into initial/task/stressor features plus early rollout progress statistics; labels mark any terminal failure or timeout.",
         "",
         "```json",
         json.dumps(summary.get("class_balance", {}), indent=2, sort_keys=True),
@@ -109,31 +130,58 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
             [
                 "## Calibration",
                 "",
-                "```json",
-                json.dumps(summary["calibration"], indent=2, sort_keys=True),
-                "```",
-                "",
-                "## Metrics",
+                f"Temperature scaling selected `T={calibration.get('temperature')}` and planner threshold `{calibration.get('threshold')}` on the calibration split.",
                 "",
                 "```json",
-                json.dumps(summary["metrics"], indent=2, sort_keys=True),
+                json.dumps(calibration, indent=2, sort_keys=True),
                 "```",
                 "",
-                "## Baselines",
+                "## Test Metrics",
                 "",
-                "```json",
-                json.dumps(summary["baselines"], indent=2, sort_keys=True),
-                "```",
+                "| Model | AUROC | AUPRC | Brier | NLL | ECE | Coverage @ threshold | Failure rate attempted |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                _metric_row("global prior", global_test),
+                _metric_row("fixed task prior", fixed_test),
+                _metric_row("logistic state/progress risk", test_metrics),
+                "",
+                "The test split is still small, so these numbers should be treated as an engineering checkpoint rather than a final benchmark claim. The fixed task prior is a strong baseline because the current stress suite makes task identity informative; the next step is to add richer image/language and transition features so the learned critic can beat fixed priors under held-out perturbations.",
                 "",
                 "## Offline Supervisor",
                 "",
                 "```json",
-                json.dumps(summary["supervisor_offline"], indent=2, sort_keys=True),
+                json.dumps(supervisor, indent=2, sort_keys=True),
                 "```",
+                "",
+                "## Reproduce",
+                "",
+                "```bash",
+                "SUITES=\"libero_spatial\" TASK_IDS=\"0 1 2\" NUM_TRIALS=3 STRESSORS=\"none\" sbatch slurm/openpi_libero_rollouts.sbatch",
+                "SUITES=\"libero_spatial\" TASK_IDS=\"0 1 2\" NUM_TRIALS=3 STRESSORS=\"occlusion\" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch",
+                "PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml",
+                "MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES=\"libero_spatial\" TASK_IDS=\"0 1 2\" NUM_TRIALS=2 STRESSORS=\"occlusion\" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch",
+                "```",
+                "",
+                "## Limitations",
+                "",
+                "- The current OpenPI result is a small rollout study, not a benchmark-scale LIBERO evaluation.",
+                "- The present risk features include stressor metadata for controlled stress testing; the production path should replace this with directly observed image/language/progress features.",
+                "- The learned risk critic is a transparent logistic baseline. Neural VLM/world-model features are planned after this executable risk-supervision loop is stable.",
                 "",
             ]
         )
     Path(report_path).write_text("\n".join(lines), encoding="utf-8")
+
+
+def _metric_row(name: str, metrics: dict[str, Any]) -> str:
+    return (
+        f"| {name} | {_fmt(metrics.get('auroc'))} | {_fmt(metrics.get('auprc'))} | "
+        f"{_fmt(metrics.get('brier'))} | {_fmt(metrics.get('nll'))} | {_fmt(metrics.get('ece'))} | "
+        f"{_fmt(metrics.get('coverage_at_threshold'))} | {_fmt(metrics.get('failure_rate_attempted'))} |"
+    )
+
+
+def _fmt(value: Any) -> str:
+    return "n/a" if value is None else f"{float(value):.3f}"
 
 
 def _mean_label(examples) -> float:

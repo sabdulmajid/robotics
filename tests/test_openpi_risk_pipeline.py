@@ -28,6 +28,21 @@ def test_openpi_risk_dataset_and_training_on_synthetic_logs(tmp_path: Path) -> N
     assert summary["ok"]
     assert summary["metrics"]["test"]["examples"] >= 1
     assert "temperature" in summary["calibration"]
+    assert "normalization" in summary
+    assert set(summary["normalization"]) == {"mean", "std"}
+
+
+def test_openpi_risk_loader_deduplicates_combined_and_per_task_logs(tmp_path: Path) -> None:
+    combined = tmp_path / "combined.jsonl"
+    task = tmp_path / "task.jsonl"
+    episode = _episode("ep_success_0", success=True, stressor="none", severity=0.0, action_norm=0.8)
+    combined.write_text(json.dumps(episode) + "\n", encoding="utf-8")
+    task.write_text(json.dumps(episode) + "\n", encoding="utf-8")
+
+    examples = load_openpi_risk_examples([combined, task])
+
+    assert len(examples) == 1
+    assert examples[0].episode_id == "ep_success_0"
 
 
 def _episode(episode_id: str, *, success: bool, stressor: str, severity: float, action_norm: float) -> dict[str, object]:

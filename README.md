@@ -14,6 +14,8 @@ Current status:
 - OpenPI/LIBERO setup: OpenPI is cloned under ignored `external/`, the LIBERO client venv is reproducible through SLURM, and strict setup smoke has passed on a `dualcard` GPU node.
 - Real OpenPI/LIBERO rollout path: added a Python 3.8-compatible single-task evaluator that starts from OpenPI's upstream LIBERO evaluator and emits risk-ready JSONL logs.
 - First real OpenPI policy smoke: `pi05_libero` completed one LIBERO-Spatial task-0 episode successfully on `dualcard` SLURM job `10092`; this is a smoke result, not a benchmark success-rate claim.
+- Direct OpenPI baselines: `libero_spatial` tasks `0,1,2` reached `9/9` success with no stressor, `10/12` under mixed moderate occlusion/action-noise stress, and `1/9` under severe occlusion. These runs produce the first real failure regime for risk modeling.
+- OpenPI risk critic: trained a transparent calibrated logistic baseline on `30` OpenPI/LIBERO episodes with a `20/10` success/failure split. This is an engineering checkpoint; fixed task priors remain strong and richer image/language/world-model features are the next research step.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
 
@@ -25,8 +27,8 @@ The main project direction is to wrap OpenPI `pi05_libero` execution with calibr
 | --- | --- | --- |
 | [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed, first policy rollout passed |
 | [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | installed locally, client venv smoke passed, first episode log/video collected |
-| VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | schema slots implemented, extractor planned after rollout data lands |
-| World model features | Learned progress/transition predictor from rollout logs for no-progress and likely-failure signals | placeholder feature slot implemented, training planned after direct rollouts |
+| VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | planned next; OpenPI already provides the VLA policy backbone, but the current risk critic is structured/log-only |
+| World model features | Learned progress/transition predictor from rollout logs for no-progress and likely-failure signals | planned next; current runner logs no-progress, action smoothness, rewards, and per-step images needed for this model |
 | [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned ablation, not required for first OpenPI result |
 
 Execution modes to evaluate once OpenPI smoke passes:
@@ -49,21 +51,33 @@ python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/ope
 python -m risk_aware_skill_planning.cli openpi-libero-smoke --config configs/openpi_libero_smoke.yaml --strict
 python -m risk_aware_skill_planning.cli openpi-libero-summarize --input datasets/openpi_libero_rollouts/example.jsonl
 python scripts/openpi_libero_single_task_eval.py --dry-run
+PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train_risk.yaml
 sbatch slurm/openpi_libero_smoke.sbatch
 sbatch slurm/openpi_libero_official_smoke.sbatch
 SUITES="libero_spatial libero_goal" TASK_IDS="0 1 2" NUM_TRIALS=3 sbatch slurm/openpi_libero_rollouts.sbatch
-SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.7 sbatch slurm/openpi_libero_rollouts.sbatch
+SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=3 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
+MODE=adaptive_chunk_openpi RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="0 1 2" NUM_TRIALS=2 STRESSORS="occlusion" STRESSOR_SEVERITY=1.0 sbatch slurm/openpi_libero_rollouts.sbatch
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 The official smoke starts OpenPI's policy server and runs one real `pi05_libero` episode through the filtered LIBERO evaluator.
-The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training.
+The rollout job reuses the cached OpenPI server environment and checkpoint, then writes combined direct-policy JSONL for risk-model training. The risk summary can be passed back into the same rollout script for `selective_openpi` and `adaptive_chunk_openpi` supervisor evaluations.
 
 Tracked first-rollout artifacts:
 
 - [OpenPI/LIBERO official eval smoke report](reports/openpi_libero_official_eval_smoke.md)
 - [Rollout JSONL sample](reports/artifacts/openpi_libero_official_smoke_10092.jsonl)
 - [Success video](reports/artifacts/openpi_libero_official_smoke_10092_success.mp4)
+
+Current OpenPI reports:
+
+- [OpenPI/LIBERO risk training report](reports/openpi_libero_risk_planning.md)
+- [Nominal direct rollout summary](reports/openpi_libero_rollout_summary_10094.json)
+- [Moderate stress rollout summary](reports/openpi_libero_rollout_summary_10095.json)
+- [Severe occlusion rollout summary](reports/openpi_libero_rollout_summary_10096.json)
+- [Selective supervisor rollout summary](reports/openpi_libero_rollout_summary_10097.json)
+- [Adaptive supervisor rollout summary](reports/openpi_libero_rollout_summary_10098.json)
+- [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 
 ## Why This Exists
 
@@ -186,6 +200,7 @@ Expected verification:
 - `toy-risk-eval` trains toy learned-risk baselines, writes a tracked report, and regenerates SVG figures.
 - `openpi-libero-smoke` checks whether OpenPI/LIBERO is installed and writes exact blockers/resume commands.
 - `openpi_libero_single_task_eval.py` runs under OpenPI's Python 3.8 LIBERO client environment and writes risk-ready JSONL plus videos.
+- `train_openpi_risk.py` trains the OpenPI rollout risk critic, writes calibration metrics, and emits a risk summary loadable by the runtime supervisor.
 - `toy-trace` writes a full per-episode trace, including candidate plans and selected skills.
 
 ## Code Map
@@ -200,6 +215,9 @@ Expected verification:
 | [src/risk_aware_skill_planning/evaluation/metrics.py](src/risk_aware_skill_planning/evaluation/metrics.py) | Coverage-aware success, rejection, catastrophic failure, utility, and CI metrics. |
 | [src/risk_aware_skill_planning/evaluation/risk_eval.py](src/risk_aware_skill_planning/evaluation/risk_eval.py) | Toy learned-risk training, calibration, skill metrics, and planner impact evaluation. |
 | [src/risk_aware_skill_planning/openpi_libero](src/risk_aware_skill_planning/openpi_libero) | OpenPI/LIBERO setup boundary, rollout schema, summarization, and supervisor decisions. |
+| [src/risk_aware_skill_planning/risk/openpi_dataset.py](src/risk_aware_skill_planning/risk/openpi_dataset.py) | Converts OpenPI/LIBERO JSONL episodes into risk examples with train/calibration/test splits. |
+| [src/risk_aware_skill_planning/evaluation/openpi_risk.py](src/risk_aware_skill_planning/evaluation/openpi_risk.py) | Trains/calibrates the OpenPI risk critic and writes the current robot-policy report. |
+| [scripts/openpi_libero_single_task_eval.py](scripts/openpi_libero_single_task_eval.py) | Python 3.8-compatible OpenPI/LIBERO evaluator with stressors, JSONL logging, videos, and runtime risk-supervisor modes. |
 | [src/risk_aware_skill_planning/cli.py](src/risk_aware_skill_planning/cli.py) | Smoke, dry-run, evaluation, and trace command entry points. |
 | [tests/test_toy_harness.py](tests/test_toy_harness.py) | Regression tests for the toy gate and planner behavior. |
 
@@ -227,17 +245,18 @@ reports/       tracked summaries and final report assets
 
 ## Limitations
 
-- The current result is a toy stochastic symbolic validation, not a manipulation benchmark.
-- `oracle_risk` uses the simulator's ground-truth risk rules. The learned-risk result is still toy-domain only.
-- OpenPI/LIBERO setup smoke and the one-episode official policy smoke are passing, but no benchmark-level OpenPI success-rate result is claimed yet.
+- The current OpenPI/LIBERO result is a small rollout study, not a benchmark-scale manipulation evaluation.
+- `oracle_risk` uses the toy simulator's ground-truth risk rules. The real OpenPI risk model is still a transparent logistic baseline.
+- The current OpenPI risk features include stressor metadata for controlled stress testing. The professional research path is to replace that with directly observed VLM/image and world-model progress features.
+- OpenPI/LIBERO setup smoke and the one-episode official policy smoke are passing, and small direct-policy baselines are logged, but no benchmark-level OpenPI success-rate result is claimed yet.
 - No robosuite environment, learned manipulation policy, robosuite risk critic, or video demo is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
-1. Collect direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
-2. Train and calibrate risk critics from real rollout logs.
+1. Finish selective/adaptive supervisor comparisons under severe occlusion and report coverage-aware outcomes.
+2. Expand direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
 3. Add frozen VLM image/language embeddings as a state-conditioned risk ablation.
 4. Train a lightweight world-model/progress predictor and compare it to structured-only risk features.
-5. Evaluate selective and adaptive action-horizon supervisors against direct OpenPI.
+5. Compare OpenPI-only, OpenPI plus risk supervisor, fixed task prior, and LeRobot-format/export baselines.
 6. Keep toy oracle and learned-risk gates as regression tests.
