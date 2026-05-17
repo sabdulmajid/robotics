@@ -13,7 +13,7 @@ Current status:
 - Learned toy risk model: implemented as a calibrated logistic baseline over stochastic toy rollouts.
 - OpenPI/LIBERO setup: OpenPI is cloned under ignored `external/`, the LIBERO client venv is reproducible through SLURM, and strict setup smoke has passed on a `dualcard` GPU node.
 - Real OpenPI/LIBERO rollout path: added a Python 3.8-compatible single-task evaluator that starts from OpenPI's upstream LIBERO evaluator and emits risk-ready JSONL logs.
-- Actual OpenPI policy episode results: in progress; do not claim OpenPI success rates until `slurm/openpi_libero_official_smoke.sbatch` produces JSONL and video artifacts.
+- First real OpenPI policy smoke: `pi05_libero` completed one LIBERO-Spatial task-0 episode successfully on `dualcard` SLURM job `10092`; this is a smoke result, not a benchmark success-rate claim.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
 
@@ -23,8 +23,8 @@ The main project direction is to wrap OpenPI `pi05_libero` execution with calibr
 
 | Component | Role in this project | Status |
 | --- | --- | --- |
-| [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed |
-| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | installed locally, client venv smoke passed |
+| [OpenPI](https://github.com/Physical-Intelligence/openpi) | Primary robot foundation policy source, targeting `pi05_libero` and `gs://openpi-assets/checkpoints/pi05_libero/` | installed locally, setup smoke passed, first policy rollout passed |
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Main benchmark suite: `libero_spatial`, `libero_object`, `libero_goal`, `libero_10` | installed locally, client venv smoke passed, first episode log/video collected |
 | VLM/image features | Frozen image/language embeddings for risk prediction from logged RGB frames and task prompts | schema slots implemented, extractor planned after rollout data lands |
 | World model features | Learned progress/transition predictor from rollout logs for no-progress and likely-failure signals | placeholder feature slot implemented, training planned after direct rollouts |
 | [LeRobot](https://github.com/huggingface/lerobot) | Optional dataset/export format and future policy baseline; OpenPI itself vendors LeRobot dependencies | planned ablation, not required for first OpenPI result |
@@ -55,6 +55,12 @@ sbatch slurm/openpi_libero_official_smoke.sbatch
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
 The official smoke starts OpenPI's policy server and runs one real `pi05_libero` episode through the filtered LIBERO evaluator.
+
+Tracked first-rollout artifacts:
+
+- [OpenPI/LIBERO official eval smoke report](reports/openpi_libero_official_eval_smoke.md)
+- [Rollout JSONL sample](reports/artifacts/openpi_libero_official_smoke_10092.jsonl)
+- [Success video](reports/artifacts/openpi_libero_official_smoke_10092_success.mp4)
 
 ## Why This Exists
 
@@ -220,16 +226,15 @@ reports/       tracked summaries and final report assets
 
 - The current result is a toy stochastic symbolic validation, not a manipulation benchmark.
 - `oracle_risk` uses the simulator's ground-truth risk rules. The learned-risk result is still toy-domain only.
-- OpenPI/LIBERO setup smoke is passing, but no OpenPI policy success-rate result is claimed until the official smoke produces real action rollouts.
+- OpenPI/LIBERO setup smoke and the one-episode official policy smoke are passing, but no benchmark-level OpenPI success-rate result is claimed yet.
 - No robosuite environment, learned manipulation policy, robosuite risk critic, or video demo is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
-1. Run `slurm/openpi_libero_official_smoke.sbatch` to produce the first real OpenPI/LIBERO JSONL and video.
-2. Collect direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
-3. Train and calibrate risk critics from real rollout logs.
-4. Add frozen VLM image/language embeddings as a state-conditioned risk ablation.
-5. Train a lightweight world-model/progress predictor and compare it to structured-only risk features.
-6. Evaluate selective and adaptive action-horizon supervisors against direct OpenPI.
-7. Keep toy oracle and learned-risk gates as regression tests.
+1. Collect direct OpenPI LIBERO rollout logs across spatial/object/goal/10 suites.
+2. Train and calibrate risk critics from real rollout logs.
+3. Add frozen VLM image/language embeddings as a state-conditioned risk ablation.
+4. Train a lightweight world-model/progress predictor and compare it to structured-only risk features.
+5. Evaluate selective and adaptive action-horizon supervisors against direct OpenPI.
+6. Keep toy oracle and learned-risk gates as regression tests.
