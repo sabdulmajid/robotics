@@ -43,11 +43,24 @@ def run_openpi_risk_training(
     calibration_labels = [example.label_failure for example in splits["calibration"]]
     threshold = choose_threshold(calibration_labels, calibration_probs)
     split_metrics = {}
+    baseline_metrics = {"global_prior": {}, "fixed_task_prior": {}}
+    global_prior = _mean_label(splits["train"])
+    task_priors = _task_priors(splits["train"], default=global_prior)
     for split_name, items in splits.items():
         probs = predict_examples(calibrated, items)
         labels = [example.label_failure for example in items]
         split_metrics[split_name] = binary_risk_metrics(labels, probs, threshold=threshold)
         split_metrics[split_name]["reliability_bins"] = reliability_bins(labels, probs)
+        baseline_metrics["global_prior"][split_name] = binary_risk_metrics(
+            labels,
+            [global_prior for _ in items],
+            threshold=threshold,
+        )
+        baseline_metrics["fixed_task_prior"][split_name] = binary_risk_metrics(
+            labels,
+            [_lookup_task_prior(task_priors, example, global_prior) for example in items],
+            threshold=threshold,
+        )
     summary.update(
         {
             "ok": True,
@@ -59,6 +72,15 @@ def run_openpi_risk_training(
             },
             "weights": dict(zip(calibrated.feature_names, calibrated.weights)),
             "metrics": split_metrics,
+            "baselines": baseline_metrics,
+            "supervisor_offline": {
+                "mode": "selective_openpi",
+                "threshold_source": "calibration_split",
+                "threshold": threshold,
+                "interpretation": "Episodes with calibrated p_failure >= threshold are abstained in this offline coverage analysis.",
+                "test_coverage": split_metrics["test"]["coverage_at_threshold"],
+                "test_failure_rate_attempted": split_metrics["test"]["failure_rate_attempted"],
+            },
         }
     )
     return summary
@@ -97,6 +119,33 @@ def write_openpi_risk_outputs(summary: dict[str, Any], summary_path: str | Path,
                 json.dumps(summary["metrics"], indent=2, sort_keys=True),
                 "```",
                 "",
+                "## Baselines",
+                "",
+                "```json",
+                json.dumps(summary["baselines"], indent=2, sort_keys=True),
+                "```",
+                "",
+                "## Offline Supervisor",
+                "",
+                "```json",
+                json.dumps(summary["supervisor_offline"], indent=2, sort_keys=True),
+                "```",
+                "",
             ]
         )
     Path(report_path).write_text("\n".join(lines), encoding="utf-8")
+
+
+def _mean_label(examples) -> float:
+    return sum(example.label_failure for example in examples) / len(examples) if examples else 0.0
+
+
+def _task_priors(examples, *, default: float) -> dict[tuple[str, int], float]:
+    grouped: dict[tuple[str, int], list[int]] = {}
+    for example in examples:
+        grouped.setdefault((example.suite, example.task_id), []).append(example.label_failure)
+    return {key: sum(values) / len(values) for key, values in grouped.items()} or {("", -1): default}
+
+
+def _lookup_task_prior(priors: dict[tuple[str, int], float], example, default: float) -> float:
+    return priors.get((example.suite, example.task_id), default)
