@@ -36,6 +36,7 @@ HIGH_RISK_THRESHOLD="${HIGH_RISK_THRESHOLD:-0.85}"
 ABSTAIN_THRESHOLD="${ABSTAIN_THRESHOLD:-0.95}"
 STRESSORS="${STRESSORS:-none}"
 STRESSOR_SEVERITY="${STRESSOR_SEVERITY:-0.0}"
+OPENPI_SYNC_ENV="${OPENPI_SYNC_ENV:-0}"
 
 mkdir -p "${REPO_ROOT}/outputs/openpi_libero" "${REPO_ROOT}/datasets/openpi_libero_rollouts"
 mkdir -p "${REPO_ROOT}/videos" "${REPO_ROOT}/checkpoints/openpi_cache" "${REPO_ROOT}/.cache"
@@ -75,8 +76,12 @@ ENV_LOCK_HELD=1
 if [[ ! -x examples/libero/.venv/bin/python ]]; then
   uv venv --python 3.8 examples/libero/.venv
 fi
-uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
-uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
+if [[ "${OPENPI_SYNC_ENV}" == "1" ]]; then
+  uv pip sync --python examples/libero/.venv/bin/python examples/libero/requirements.txt third_party/libero/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu113 --index-strategy=unsafe-best-match
+  uv pip install --python examples/libero/.venv/bin/python -e packages/openpi-client -e third_party/libero
+else
+  echo "Skipping OpenPI env sync; set OPENPI_SYNC_ENV=1 to refresh the shared venv."
+fi
 rmdir "${ENV_LOCK_DIR}" 2>/dev/null || true
 ENV_LOCK_HELD=0
 
