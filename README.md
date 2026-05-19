@@ -18,6 +18,7 @@ Current status:
 - OpenPI risk critics: trained audited `metadata_oracle_risk`, `structured_progress_risk`, and frozen-SigLIP `vision_language_risk` logistic ablations. The diagnostic metadata-aware model reaches test AUROC `0.930` / AUPRC `0.840`; the deployable structured/progress model reaches AUROC `0.702` / AUPRC `0.297`; the observed-image SigLIP ablation reaches AUROC `0.905` / AUPRC `0.811` without hidden stressor metadata.
 - Supervisor comparisons: selective execution, adaptive chunking, no-progress early abort, and adaptive-plus-abort are reported with coverage, failure, expected utility, policy-query overhead, and bootstrap confidence intervals. Adaptive/abort rows are offline counterfactuals from logged episodes unless explicitly marked as runtime rollouts.
 - Runtime VLM supervisor: `vision_language_risk_selective` now runs inside the real OpenPI/LIBERO evaluator. On `630` held-out runtime episodes, the original runtime SigLIP threshold reduces attempted failure from `0.305` for direct OpenPI to `0.126`, but lowers coverage to `0.681`. A task-disjoint threshold sweep then finds a better operating point: calibration target `0.75`, test coverage `0.781`, utility `0.627` versus direct OpenPI test utility `0.571`, and attempted failure `0.085` versus direct `0.276`.
+- Tuned-threshold deployment: SLURM job `10148` ran the best-utility threshold `0.9333276460818999` on a fresh seed over tasks `5..9` with occlusion/action-noise severity `0.6`; it completed `28/30` episodes, with no abstentions and utility `0.888`.
 - VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and computed at runtime for selective rejection; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
@@ -100,6 +101,7 @@ Current OpenPI reports:
 - [Stress severity 0.8 summary](reports/openpi_libero_rollout_summary_10130.json)
 - [Stress severity 1.0 summary](reports/openpi_libero_rollout_summary_10131.json)
 - [Runtime SigLIP supervisor summary](reports/openpi_runtime_siglip_eval_summary.json)
+- [Tuned-threshold deployment summary](reports/openpi_tuned_threshold_deployment_10148.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)

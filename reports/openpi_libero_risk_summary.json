@@ -27885,6 +27885,95 @@
     "by_suite": {
       "libero_spatial": 630
     },
+    "deployment_runs": {
+      "tuned_threshold_10148": {
+        "conditions": {
+          "command": "RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES=\"libero_spatial\" TASK_IDS=\"5 6 7 8 9\" NUM_TRIALS=3 STRESSORS=\"occlusion action_noise\" STRESSOR_SEVERITY=0.6 SEED=3000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch",
+          "job_id": 10148,
+          "jsonl_path": "datasets/openpi_libero_rollouts/openpi_rollouts_10148.jsonl",
+          "result_summary_path": "reports/openpi_libero_rollout_summary_10148.json",
+          "seed": 3000,
+          "stressor_severity": 0.6,
+          "stressors": [
+            "occlusion",
+            "action_noise"
+          ],
+          "suite": "libero_spatial",
+          "task_ids": [
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "threshold_override": 0.9333276460818999,
+          "trials_per_task_stressor": 3
+        },
+        "episodes": 30,
+        "interpretation": "Fresh real SLURM deployment of the best-utility threshold on moderate occlusion/action-noise. This is not a same-seed direct baseline comparison.",
+        "job_id": 10148,
+        "metrics": {
+          "abstention_rate": 0.0,
+          "attempted_completion_rate": 0.9333333333333333,
+          "ci95": {
+            "abstention_rate": {
+              "high": 0.0,
+              "low": 0.0,
+              "mean": 0.0,
+              "samples": 500
+            },
+            "attempted_completion_rate": {
+              "high": 1.0,
+              "low": 0.8333333333333334,
+              "mean": 0.9312666666666667,
+              "samples": 500
+            },
+            "expected_utility": {
+              "high": 0.9884299999999999,
+              "low": 0.7363933333333333,
+              "mean": 0.8843904866666666,
+              "samples": 500
+            },
+            "failure_rate": {
+              "high": 0.16666666666666666,
+              "low": 0.0,
+              "mean": 0.06873333333333333,
+              "samples": 500
+            },
+            "failure_rate_attempted": {
+              "high": 0.16666666666666666,
+              "low": 0.0,
+              "mean": 0.06873333333333333,
+              "samples": 500
+            },
+            "task_completion_rate": {
+              "high": 1.0,
+              "low": 0.8333333333333334,
+              "mean": 0.9312666666666667,
+              "samples": 500
+            },
+            "timeout_rate": {
+              "high": 0.16666666666666666,
+              "low": 0.0,
+              "mean": 0.06873333333333333,
+              "samples": 500
+            }
+          },
+          "coverage": 1.0,
+          "episodes": 30,
+          "expected_utility": 0.8875433333333334,
+          "failure_rate": 0.06666666666666667,
+          "failure_rate_attempted": 0.06666666666666667,
+          "mean_policy_queries": 25.433333333333334,
+          "mean_runtime_risk_compute_seconds": 0.00010875860850016276,
+          "task_completion_rate": 0.9333333333333333,
+          "timeout_rate": 0.06666666666666667
+        },
+        "seed": 3000,
+        "summary_path": "reports/openpi_tuned_threshold_deployment_10148.json",
+        "threshold_override": 0.9333276460818999
+      }
+    },
     "episodes": 630,
     "gpu_models": {
       "NVIDIA RTX A4500": 630

@@ -74,6 +74,14 @@ Best utility operating point: target `0.75`, test utility `0.627`, coverage `0.7
 
 The rollout script now supports `RUNTIME_RISK_THRESHOLD_OVERRIDE`, so the tuned threshold can be deployed without editing the risk summary. The best-utility threshold from the sweep is `0.9333276460818999`; the best >=85% coverage threshold is `0.9860334584902223`.
 
+Fresh tuned-threshold deployment:
+
+| Job | Threshold | Seed | Conditions | Episodes | Success | Timeout | Abstain | Utility |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 10148 | 0.9333276460818999 | 3000 | tasks `5..9`, occlusion/action-noise severity `0.6` | 30 | 28 | 2 | 0 | 0.888 |
+
+Job `10148` is a real deployment sanity check for the tuned threshold. It attempted all moderate-stress episodes and achieved `93.3%` completion. It should not be presented as a same-seed controlled comparison against direct OpenPI; it is evidence that the tuned threshold can run online without the over-abstention seen from the original offline threshold.
+
 ## Risk Critic Checkpoint
 
 Final audited dataset split:

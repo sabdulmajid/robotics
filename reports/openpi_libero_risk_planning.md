@@ -252,6 +252,27 @@ Best safety operating point: target `0.70`, test attempted failure `0.083`, at t
 
 Bootstrap confidence intervals for every threshold row are stored in `reports/openpi_runtime_siglip_eval_summary.json`. For the best-utility row, utility CI is `[0.513, 0.746]` and attempted-failure CI is `[0.025, 0.148]`.
 
+### Tuned Threshold Deployment
+
+The best-utility threshold from the sweep was deployed in a fresh real SLURM run, job `10148`, using seed `3000` on `libero_spatial` tasks `5..9`, stressors `occlusion` and `action_noise`, severity `0.6`, and `3` trials per task/stressor. This is the exact launch command:
+
+```bash
+RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 SEED=3000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+```
+
+| Run | Episodes | Coverage | Completion | Attempted failure | Timeout | Abstain | Utility | Mean policy queries |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| tuned SigLIP threshold, job `10148` | 30 | 1.000 | 0.933 | 0.067 | 0.067 | 0.000 | 0.888 | 25.433 |
+
+By stressor:
+
+| Stressor | Episodes | Successes | Timeouts | Abstentions |
+| --- | ---: | ---: | ---: | ---: |
+| `occlusion:0.60` | 15 | 14 | 1 | 0 |
+| `action_noise:0.60` | 15 | 14 | 1 | 0 |
+
+This deployment run confirms that the tuned threshold does not over-abstain on moderate held-out stress: all `30` episodes were attempted. The result is positive, but it is not a controlled same-seed direct-vs-tuned comparison; the appropriate controlled comparison remains the task-disjoint paired threshold sweep above. The next controlled deployment should run direct OpenPI and tuned SigLIP on the same new seed and include higher occlusion settings where abstention should occur.
+
 ## Offline Supervisor
 
 ```json
@@ -390,22 +411,22 @@ Audit JSON: `reports/openpi_metrics_audit.json`
       "direct_openpi": 1203,
       "fixed_task_prior_selective": 210,
       "selective_openpi": 9,
-      "vision_language_risk_selective": 211
+      "vision_language_risk_selective": 241
     },
     "by_stressor": {
-      "action_noise": 396,
+      "action_noise": 411,
       "none": 503,
-      "occlusion": 740
+      "occlusion": 755
     },
     "by_stressor_severity": {
       "action_noise:0.20": 70,
       "action_noise:0.40": 160,
-      "action_noise:0.60": 160,
+      "action_noise:0.60": 175,
       "action_noise:0.70": 6,
       "none:0.00": 503,
       "occlusion:0.20": 70,
       "occlusion:0.40": 160,
-      "occlusion:0.60": 160,
+      "occlusion:0.60": 175,
       "occlusion:0.70": 6,
       "occlusion:0.80": 160,
       "occlusion:1.00": 184
@@ -414,11 +435,11 @@ Audit JSON: `reports/openpi_metrics_audit.json`
       "libero_10": 101,
       "libero_goal": 101,
       "libero_object": 101,
-      "libero_spatial": 1336
+      "libero_spatial": 1366
     },
-    "episodes": 1639,
-    "successes": 1235,
-    "timeouts": 328
+    "episodes": 1669,
+    "successes": 1263,
+    "timeouts": 330
   },
   "split_sizes": {
     "calibration": 197,
