@@ -1,6 +1,6 @@
 # OpenPI Risk-Aware Execution Project Status
 
-Date: 2026-05-17
+Date: 2026-05-20
 
 ## Current Claim
 
@@ -14,10 +14,11 @@ The repository now demonstrates a real OpenPI/LIBERO risk-aware execution loop:
 - The saved risk summary can be loaded back into the evaluator for selective rejection and adaptive action chunking.
 - The frozen-SigLIP risk model now runs online inside OpenPI/LIBERO rollouts as `vision_language_risk_selective`, using a runtime RGB frame and 10-step progress prefix before either executing or abstaining.
 - A held-out runtime grid has `630` real OpenPI/LIBERO episodes across direct OpenPI, fixed task priors, and runtime SigLIP supervision.
+- A fresh same-seed controlled deployment adds `500` online episodes across direct OpenPI, fixed task priors, and two tuned runtime SigLIP thresholds on identical tasks, stressors, and seeds.
 
 The strongest honest statement is:
 
-> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, frozen SigLIP image-risk models, runtime selective execution, task-disjoint threshold tuning, and coverage-aware evaluation over 630 held-out online episodes.
+> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, frozen SigLIP image-risk models, runtime selective execution, task-disjoint threshold tuning, and coverage-aware evaluation over 1,130 held-out online supervisor episodes.
 
 This is not a formal safety guarantee and not an OpenPI leaderboard claim.
 
@@ -82,6 +83,26 @@ Fresh tuned-threshold deployment:
 
 Job `10148` is a real deployment sanity check for the tuned threshold. It attempted all moderate-stress episodes and achieved `93.3%` completion. It should not be presented as a same-seed controlled comparison against direct OpenPI; it is evidence that the tuned threshold can run online without the over-abstention seen from the original offline threshold.
 
+## Same-Seed Controlled Deployment
+
+The controlled deployment closes the main evaluation gap from job `10148`: all modes are now run on the same task IDs, stress conditions, trial count, and seed. Jobs `10149..10168` use `libero_spatial` tasks `5..9`, seed `4000`, `5` trials per condition, and the stress grid `none`, `occlusion:0.60`, `occlusion:0.80`, `occlusion:1.00`, and `action_noise:0.60`.
+
+| Runtime mode | Episodes | Coverage | Completion | Attempted completion | Attempted failure | Timeout | Abstain | Utility |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| direct OpenPI | 125 | 1.000 | 0.656 | 0.656 | 0.344 | 0.344 | 0.000 | 0.469 |
+| fixed task prior selective | 125 | 1.000 | 0.648 | 0.648 | 0.352 | 0.352 | 0.000 | 0.457 |
+| SigLIP selective, threshold `0.9333276460818999` | 125 | 0.680 | 0.584 | 0.859 | 0.141 | 0.096 | 0.320 | 0.463 |
+| SigLIP selective, threshold `0.9860334584902223` | 125 | 0.800 | 0.616 | 0.770 | 0.230 | 0.184 | 0.200 | 0.473 |
+
+Controlled result:
+
+- The higher-coverage SigLIP threshold `0.9860334584902223` is the best deployable tradeoff in this run: utility improves by `0.004` over direct OpenPI while attempted failure drops by `0.114` absolute.
+- The lower threshold `0.9333276460818999` is safer but more selective: attempted failure drops by `0.203` absolute, with `0.680` coverage and utility `0.006` below direct OpenPI.
+- Both SigLIP thresholds beat random abstention at matched coverage on utility and attempted-failure rate, so the result is not explained by rejecting arbitrary episodes.
+- The supervisor behaves as intended under severe occlusion: at `occlusion:1.00`, threshold `0.9333` abstains on all episodes and threshold `0.9860` abstains on `96%`.
+
+This is now a meaningful online runtime-supervision result: the VLM risk model rejects distribution-shifted states in the real OpenPI/LIBERO loop and improves reliability at a tunable coverage/utility point. It is still a simulation result, not a formal safety guarantee.
+
 ## Risk Critic Checkpoint
 
 Final audited dataset split:
@@ -144,6 +165,7 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 - The audit also recomputes the trained `vision_language_risk` metrics from the local SigLIP embedding artifact.
 - Supervisor/non-direct runs are excluded from training inputs.
 - Runtime supervisor evaluation and the task-disjoint runtime threshold sweep are summarized in `reports/openpi_runtime_siglip_eval_summary.json`.
+- Same-seed controlled deployment is summarized in `reports/openpi_runtime_controlled_deployment_summary.json`.
 - The global-prior AUPRC tie-handling bug is fixed and audited.
 - `python -m pytest -q` is the final repo regression check.
 
@@ -151,6 +173,6 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 
 Use this phrasing:
 
-> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk models, runtime selective rejection, task-disjoint threshold tuning, adaptive replanning hooks, and coverage-aware evaluation over 993 audited offline training/evaluation rollouts plus 630 held-out online supervisor episodes.
+> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk models, runtime selective rejection, task-disjoint threshold tuning, adaptive replanning hooks, and coverage-aware evaluation over 993 audited offline training/evaluation rollouts plus 1,130 held-out online supervisor episodes.
 
 Do not say the project has solved robot safety. The professional framing is calibrated risk-aware supervision for brittle robot foundation policy execution.

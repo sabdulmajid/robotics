@@ -19,6 +19,7 @@ Current status:
 - Supervisor comparisons: selective execution, adaptive chunking, no-progress early abort, and adaptive-plus-abort are reported with coverage, failure, expected utility, policy-query overhead, and bootstrap confidence intervals. Adaptive/abort rows are offline counterfactuals from logged episodes unless explicitly marked as runtime rollouts.
 - Runtime VLM supervisor: `vision_language_risk_selective` now runs inside the real OpenPI/LIBERO evaluator. On `630` held-out runtime episodes, the original runtime SigLIP threshold reduces attempted failure from `0.305` for direct OpenPI to `0.126`, but lowers coverage to `0.681`. A task-disjoint threshold sweep then finds a better operating point: calibration target `0.75`, test coverage `0.781`, utility `0.627` versus direct OpenPI test utility `0.571`, and attempted failure `0.085` versus direct `0.276`.
 - Tuned-threshold deployment: SLURM job `10148` ran the best-utility threshold `0.9333276460818999` on a fresh seed over tasks `5..9` with occlusion/action-noise severity `0.6`; it completed `28/30` episodes, with no abstentions and utility `0.888`.
+- Same-seed controlled deployment: `20` fresh SLURM jobs (`10149..10168`) compare direct OpenPI, fixed task priors, and two runtime SigLIP thresholds on the same `libero_spatial` tasks `5..9`, seed `4000`, and stress grid. Across `500` online episodes, the higher-coverage SigLIP threshold `0.9860334584902223` slightly improves utility over direct OpenPI (`0.473` vs `0.469`) while reducing attempted failure (`0.230` vs `0.344`) at `0.800` coverage. The safer `0.9333276460818999` threshold cuts attempted failure to `0.141` at `0.680` coverage and beats random abstention at matched coverage, but slightly trails direct utility.
 - VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and computed at runtime for selective rejection; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
@@ -71,6 +72,7 @@ MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summ
 PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl'
 PYTHONPATH=src python scripts/sweep_openpi_runtime_thresholds.py --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl'
 RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 SEED=3000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
+PYTHONPATH=src python scripts/summarize_openpi_controlled_deployment.py --manifest reports/openpi_controlled_deployment_jobs_seed4000.jsonl --output reports/openpi_runtime_controlled_deployment_summary.json
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
@@ -102,6 +104,7 @@ Current OpenPI reports:
 - [Stress severity 1.0 summary](reports/openpi_libero_rollout_summary_10131.json)
 - [Runtime SigLIP supervisor summary](reports/openpi_runtime_siglip_eval_summary.json)
 - [Tuned-threshold deployment summary](reports/openpi_tuned_threshold_deployment_10148.json)
+- [Same-seed controlled deployment summary](reports/openpi_runtime_controlled_deployment_summary.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)

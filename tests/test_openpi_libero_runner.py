@@ -161,6 +161,53 @@ def test_runtime_threshold_sweep_uses_task_disjoint_calibration() -> None:
     assert row["test"]["failure_rate_attempted"] == 0.0
 
 
+def test_controlled_deployment_summary_adds_matched_baselines() -> None:
+    module = _load_script_module("scripts/summarize_openpi_controlled_deployment.py", "openpi_controlled")
+    direct = [
+        _episode("direct_openpi", 0, success=True),
+        _episode("direct_openpi", 1, success=False),
+        _episode("direct_openpi", 2, success=True),
+        _episode("direct_openpi", 3, success=False),
+    ]
+    fixed = [_episode("fixed_task_prior_selective", idx, success=episode["success"]) for idx, episode in enumerate(direct)]
+    siglip_0933 = [
+        _episode("vision_language_risk_selective", 0, success=True, risk=0.1),
+        _episode("vision_language_risk_selective", 1, success=False, risk=0.9, abstained=True),
+        _episode("vision_language_risk_selective", 2, success=True, risk=0.1),
+        _episode("vision_language_risk_selective", 3, success=False, risk=0.9, abstained=True),
+    ]
+    siglip_0986 = [
+        _episode("vision_language_risk_selective", idx, success=episode["success"], risk=0.1)
+        for idx, episode in enumerate(direct)
+    ]
+    manifest = [
+        {"job_id": 1, "label": "direct"},
+        {"job_id": 2, "label": "fixed"},
+        {"job_id": 3, "label": "siglip_0933"},
+        {"job_id": 4, "label": "siglip_0986"},
+    ]
+
+    summary = module.summarize_controlled_deployment(
+        manifest,
+        {
+            "direct": direct,
+            "fixed": fixed,
+            "siglip_0933": siglip_0933,
+            "siglip_0986": siglip_0986,
+        },
+        random_seeds=100,
+    )
+
+    assert summary["ok"]
+    assert summary["grid_checks"]["same_grid"]
+    assert summary["metrics"]["siglip_0933"]["coverage"] == 0.5
+    assert summary["matched_baselines"]["siglip_0933"]["random_abstain_matched_coverage"]["samples"] == 100
+    assert summary["matched_baselines"]["siglip_0933"]["oracle_abstain_upper_bound"]["source"].startswith(
+        "diagnostic upper bound"
+    )
+    assert summary["analysis_questions"]["siglip_0933"]["reduces_attempted_failure_vs_direct"]
+
+
 def _load_single_task_eval_module():
     return _load_script_module("scripts/openpi_libero_single_task_eval.py", "openpi_single_eval")
 

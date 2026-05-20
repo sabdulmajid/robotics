@@ -1,0 +1,17 @@
+{
+  "by_mode": {
+    "fixed_task_prior_selective": {
+      "episodes": 25,
+      "mean_episode_steps": 118.24,
+      "success_rate": 0.92,
+      "successes": 23,
+      "terminal_labels": {
+        "success": 23,
+        "timeout": 2
+      },
+      "timeout_rate": 0.08,
+      "timeouts": 2
+    }
+  },
+  "episodes": 25
+}
