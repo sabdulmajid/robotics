@@ -20,6 +20,7 @@ Current status:
 - Runtime VLM supervisor: `vision_language_risk_selective` now runs inside the real OpenPI/LIBERO evaluator. On `630` held-out runtime episodes, the original runtime SigLIP threshold reduces attempted failure from `0.305` for direct OpenPI to `0.126`, but lowers coverage to `0.681`. A task-disjoint threshold sweep then finds a better operating point: calibration target `0.75`, test coverage `0.781`, utility `0.627` versus direct OpenPI test utility `0.571`, and attempted failure `0.085` versus direct `0.276`.
 - Tuned-threshold deployment: SLURM job `10148` ran the best-utility threshold `0.9333276460818999` on a fresh seed over tasks `5..9` with occlusion/action-noise severity `0.6`; it completed `28/30` episodes, with no abstentions and utility `0.888`.
 - Same-seed controlled deployment: `20` fresh SLURM jobs (`10149..10168`) compare direct OpenPI, fixed task priors, and two runtime SigLIP thresholds on the same `libero_spatial` tasks `5..9`, seed `4000`, and stress grid. Across `500` online episodes, the higher-coverage SigLIP threshold `0.9860334584902223` slightly improves utility over direct OpenPI (`0.473` vs `0.469`) while reducing attempted failure (`0.230` vs `0.344`) at `0.800` coverage. The safer `0.9333276460818999` threshold cuts attempted failure to `0.141` at `0.680` coverage and beats random abstention at matched coverage, but slightly trails direct utility.
+- Multiseed/cross-suite deployment: added `1,950` online episodes across `69` SLURM jobs. On `libero_spatial` seeds `5000/6000/7000`, SigLIP `0.9860` improves point-estimate utility over direct (`0.504` vs `0.477`) and robustly reduces attempted failure (`0.206` vs `0.339`, delta CI `[-0.181, -0.083]`), but the utility delta CI crosses zero. On `libero_object`/`libero_goal`, SigLIP reduces attempted failure at matched coverage, but utility is lower than direct OpenPI, so cross-suite generalization holds for risk filtering rather than utility.
 - VLM/world-model path: frozen SigLIP image embeddings are extracted from logged rollout videos and computed at runtime for selective rejection; the structured model also uses early rollout progress features as a lightweight transition/progress signal. Learned predictive dynamics remain a planned world-model ablation.
 
 This is TAMP-inspired symbolic skill planning. It is not a full PDDLStream implementation and does not provide a formal safety guarantee.
@@ -73,6 +74,7 @@ PYTHONPATH=src python scripts/summarize_openpi_runtime_eval.py --input 'datasets
 PYTHONPATH=src python scripts/sweep_openpi_runtime_thresholds.py --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1013[3-9].jsonl' --input 'datasets/openpi_libero_rollouts/openpi_rollouts_1014[0-7].jsonl'
 RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_selective RISK_SUMMARY=reports/openpi_libero_risk_summary.json SUITES="libero_spatial" TASK_IDS="5 6 7 8 9" NUM_TRIALS=3 STRESSORS="occlusion action_noise" STRESSOR_SEVERITY=0.6 SEED=3000 OPENPI_INSTALL_VISION_DEPS=1 sbatch slurm/openpi_libero_rollouts.sbatch
 PYTHONPATH=src python scripts/summarize_openpi_controlled_deployment.py --manifest reports/openpi_controlled_deployment_jobs_seed4000.jsonl --output reports/openpi_runtime_controlled_deployment_summary.json
+PYTHONPATH=src python scripts/summarize_openpi_multiseed_deployment.py --manifest reports/openpi_multiseed_spatial_jobs.jsonl --manifest reports/openpi_cross_suite_jobs_seed5000.jsonl --output reports/openpi_runtime_multiseed_summary.json
 ```
 
 The non-strict smoke command writes a blocker/resume report even before OpenPI is installed. The strict form is the acceptance check for real OpenPI/LIBERO setup.
@@ -105,6 +107,7 @@ Current OpenPI reports:
 - [Runtime SigLIP supervisor summary](reports/openpi_runtime_siglip_eval_summary.json)
 - [Tuned-threshold deployment summary](reports/openpi_tuned_threshold_deployment_10148.json)
 - [Same-seed controlled deployment summary](reports/openpi_runtime_controlled_deployment_summary.json)
+- [Multiseed and cross-suite controlled summary](reports/openpi_runtime_multiseed_summary.json)
 - [OpenPI project status and next-step plan](reports/openpi_project_status.md)
 - [OpenPI/LIBERO setup guide](docs/openpi_libero_setup.md)
 - [OpenPI experiment protocol](docs/openpi_experiment_protocol.md)
@@ -284,15 +287,16 @@ reports/       tracked summaries and final report assets
 - `oracle_risk` uses the toy simulator's ground-truth risk rules. The real OpenPI risk model is still a transparent logistic baseline.
 - The `metadata_oracle_risk` OpenPI model includes stressor metadata and is diagnostic only. The deployable `structured_progress_risk` and `vision_language_risk` ablations exclude hidden stressor metadata.
 - The structured-only risk model is useful but not decisive: it improves AUROC over fixed task priors, while fixed priors remain stronger on AUPRC/Brier in the current split.
-- The SigLIP VLM result is an offline observed-image ablation from saved rollout videos. It is not yet a low-latency runtime VLM supervisor and is not a finetuned VLM policy.
+- The SigLIP VLM result is now an online runtime supervisor, but it uses a frozen first-frame embedding plus prefix statistics. It is not a finetuned VLM policy.
+- The multiseed online result robustly reduces attempted failures, but the utility gain is fragile: the spatial utility delta is positive on point estimate and still crosses zero in the bootstrap CI; cross-suite utility is lower than direct OpenPI.
 - Learned world-model dynamics are still planned; current world-model evidence is limited to prefix progress, action smoothness, no-progress, and reward statistics.
 - No custom robosuite environment, learned manipulation policy, or neural robosuite risk critic is implemented yet.
 - Rejection is implemented and tested, but the default oracle validation configuration accepts all episodes to compare planners at equal coverage.
 
 ## Roadmap
 
-1. Run runtime selective/adaptive supervisor comparisons using the full 993-episode trained risk summary.
-2. Move the SigLIP embedding path from offline video extraction into the runtime supervisor loop.
+1. Tune rejection cost/thresholds on a held-out calibration split for `libero_object` and `libero_goal` instead of reusing the `libero_spatial` threshold.
+2. Run one more cross-suite seed to determine whether cross-suite utility loss is stable or seed-specific.
 3. Train a lightweight predictive progress/world-model head and compare it to prefix-statistics-only risk features.
 4. Add a LeRobot-format export or baseline once the dataset contract is stable.
 5. Keep toy oracle and learned-risk gates as regression tests.

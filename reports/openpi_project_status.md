@@ -1,6 +1,6 @@
 # OpenPI Risk-Aware Execution Project Status
 
-Date: 2026-05-20
+Date: 2026-05-23
 
 ## Current Claim
 
@@ -15,10 +15,11 @@ The repository now demonstrates a real OpenPI/LIBERO risk-aware execution loop:
 - The frozen-SigLIP risk model now runs online inside OpenPI/LIBERO rollouts as `vision_language_risk_selective`, using a runtime RGB frame and 10-step progress prefix before either executing or abstaining.
 - A held-out runtime grid has `630` real OpenPI/LIBERO episodes across direct OpenPI, fixed task priors, and runtime SigLIP supervision.
 - A fresh same-seed controlled deployment adds `500` online episodes across direct OpenPI, fixed task priors, and two tuned runtime SigLIP thresholds on identical tasks, stressors, and seeds.
+- A multiseed/cross-suite controlled deployment adds `1,950` online episodes across `69` SLURM jobs: three `libero_spatial` seeds plus `libero_object`/`libero_goal` cross-suite runs.
 
 The strongest honest statement is:
 
-> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, frozen SigLIP image-risk models, runtime selective execution, task-disjoint threshold tuning, and coverage-aware evaluation over 1,130 held-out online supervisor episodes.
+> Built an audited risk-supervision layer for OpenPI robot foundation policies on LIBERO, with scaled SLURM rollout collection, stress-test generation, calibrated rollout-failure prediction, frozen SigLIP image-risk models, runtime selective execution, task-disjoint threshold tuning, and coverage-aware evaluation over 3,080 held-out online comparison episodes.
 
 This is not a formal safety guarantee and not an OpenPI leaderboard claim.
 
@@ -103,6 +104,34 @@ Controlled result:
 
 This is now a meaningful online runtime-supervision result: the VLM risk model rejects distribution-shifted states in the real OpenPI/LIBERO loop and improves reliability at a tunable coverage/utility point. It is still a simulation result, not a formal safety guarantee.
 
+## Multiseed And Cross-Suite Deployment
+
+The follow-on deployment keeps the same runtime model and thresholds, adds more seeds for `libero_spatial`, and tests `libero_object` plus `libero_goal`. It uses jobs `10180..10248`, for `1,950` new online episodes.
+
+Spatial pooled result over seeds `5000`, `6000`, and `7000`:
+
+| Runtime mode | Episodes | Coverage | Completion | Attempted failure | Abstain | Utility | Utility delta CI | Failure delta CI |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| direct OpenPI | 375 | 1.000 | 0.661 | 0.339 | 0.000 | 0.477 | - | - |
+| fixed task prior selective | 375 | 1.000 | 0.656 | 0.344 | 0.000 | 0.469 | -0.008 [-0.048, 0.032] | 0.005 [-0.021, 0.032] |
+| SigLIP `0.9333` | 375 | 0.667 | 0.597 | 0.104 | 0.333 | 0.487 | 0.010 [-0.041, 0.056] | -0.235 [-0.286, -0.183] |
+| SigLIP `0.9860` | 375 | 0.803 | 0.637 | 0.206 | 0.197 | 0.504 | 0.027 [-0.029, 0.076] | -0.133 [-0.181, -0.083] |
+
+Cross-suite result on `libero_object` and `libero_goal`:
+
+| Runtime mode | Episodes | Coverage | Completion | Attempted failure | Abstain | Utility | Utility delta CI | Failure delta CI |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| direct OpenPI | 150 | 1.000 | 0.733 | 0.267 | 0.000 | 0.583 | - | - |
+| SigLIP `0.9333` | 150 | 0.693 | 0.627 | 0.096 | 0.307 | 0.522 | -0.061 [-0.130, 0.009] | -0.171 [-0.249, -0.093] |
+| SigLIP `0.9860` | 150 | 0.833 | 0.660 | 0.208 | 0.167 | 0.526 | -0.056 [-0.120, 0.006] | -0.059 [-0.110, -0.008] |
+
+Interpretation:
+
+- `0.9860` remains the best deployable threshold on `libero_spatial`: it has the best utility point estimate and robust attempted-failure reduction.
+- The utility gain is fragile, not proven: the bootstrap CI for utility delta still crosses zero.
+- `0.9333` should be framed as safety mode: it gives the largest attempted-failure reduction but rejects about one third of spatial episodes.
+- Cross-suite generalization holds for risk filtering, not utility. Both SigLIP thresholds reduce attempted failure on `libero_object`/`libero_goal`, but direct OpenPI retains higher utility because rejection costs outweigh the saved failures in this grid.
+
 ## Risk Critic Checkpoint
 
 Final audited dataset split:
@@ -166,6 +195,7 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 - Supervisor/non-direct runs are excluded from training inputs.
 - Runtime supervisor evaluation and the task-disjoint runtime threshold sweep are summarized in `reports/openpi_runtime_siglip_eval_summary.json`.
 - Same-seed controlled deployment is summarized in `reports/openpi_runtime_controlled_deployment_summary.json`.
+- Multiseed and cross-suite deployment is summarized in `reports/openpi_runtime_multiseed_summary.json`.
 - The global-prior AUPRC tie-handling bug is fixed and audited.
 - `python -m pytest -q` is the final repo regression check.
 
@@ -173,6 +203,6 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 
 Use this phrasing:
 
-> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk models, runtime selective rejection, task-disjoint threshold tuning, adaptive replanning hooks, and coverage-aware evaluation over 993 audited offline training/evaluation rollouts plus 1,130 held-out online supervisor episodes.
+> Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk models, runtime selective rejection, task-disjoint threshold tuning, adaptive replanning hooks, and coverage-aware evaluation over 993 audited offline training/evaluation rollouts plus 3,080 held-out online comparison episodes.
 
-Do not say the project has solved robot safety. The professional framing is calibrated risk-aware supervision for brittle robot foundation policy execution.
+Do not say the project has solved robot safety or improves utility robustly across suites. The professional framing is calibrated risk-aware supervision for brittle robot foundation policy execution, with robust attempted-failure reduction under controlled online stress tests.

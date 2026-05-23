@@ -208,6 +208,51 @@ def test_controlled_deployment_summary_adds_matched_baselines() -> None:
     assert summary["analysis_questions"]["siglip_0933"]["reduces_attempted_failure_vs_direct"]
 
 
+def test_multiseed_summary_reports_grouped_delta_cis() -> None:
+    module = _load_script_module("scripts/summarize_openpi_multiseed_deployment.py", "openpi_multiseed")
+    manifest = []
+    episodes = []
+    job_id = 1
+    for experiment, suite, seed in [
+        ("spatial_multiseed", "libero_spatial", 5000),
+        ("spatial_multiseed", "libero_spatial", 6000),
+        ("cross_suite", "libero_object", 5000),
+    ]:
+        for label, mode, threshold in [
+            ("direct", "direct_openpi", None),
+            ("siglip_0986", "vision_language_risk_selective", 0.9860334584902223),
+        ]:
+            row = {
+                "experiment": experiment,
+                "job_id": job_id,
+                "label": label,
+                "mode": mode,
+                "suites": [suite],
+                "seed": seed,
+                "threshold": threshold,
+            }
+            manifest.append(row)
+            for task_id, success in [(0, True), (1, False), (2, False)]:
+                abstained = label == "siglip_0986" and not success
+                episode = _episode(mode, task_id, success=success, risk=0.8 if abstained else 0.1, abstained=abstained)
+                episode["libero_suite"] = suite
+                episode["seed"] = seed
+                episode["_manifest"] = row
+                episodes.append(episode)
+            job_id += 1
+
+    summary = module.summarize_multiseed_deployment(manifest, episodes, random_seeds=50)
+
+    assert summary["ok"]
+    spatial = summary["groups"]["spatial_multiseed"]
+    assert spatial["metrics"]["siglip_0986"]["coverage"] == 1 / 3
+    assert spatial["comparisons_vs_direct"]["siglip_0986"]["utility_delta_ci95"]["samples"] == 1000
+    assert spatial["matched_baselines"]["siglip_0986"]["random_abstain_matched_coverage"]["samples"] == 50
+    assert summary["per_seed"]["spatial_multiseed:seed5000"]["episodes"] == 6
+    assert summary["per_suite"]["cross_suite:libero_object"]["metrics"]["siglip_0986"]["coverage"] == 1 / 3
+    assert summary["analysis_questions"]["cross_suite_generalization_holds"]
+
+
 def _load_single_task_eval_module():
     return _load_script_module("scripts/openpi_libero_single_task_eval.py", "openpi_single_eval")
 

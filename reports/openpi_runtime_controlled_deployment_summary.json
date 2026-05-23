@@ -45,6 +45,23 @@
   },
   "episodes": 500,
   "failures": [],
+  "follow_on_multiseed_summary": {
+    "cross_suite": {
+      "best_deployable_tradeoff": "siglip_0986",
+      "episodes": 450,
+      "generalization_holds_for_attempted_failure_reduction": true,
+      "utility_gain_robust": false
+    },
+    "fresh_controlled_episodes": 1950,
+    "interpretation": "Follow-on multiseed/cross-suite deployment strengthens the attempted-failure reduction claim but shows utility gain remains fragile.",
+    "path": "reports/openpi_runtime_multiseed_summary.json",
+    "spatial_multiseed": {
+      "attempted_failure_reduction_robust": true,
+      "best_deployable_tradeoff": "siglip_0986",
+      "episodes": 1500,
+      "utility_gain_robust": false
+    }
+  },
   "fresh_controlled_episodes": 500,
   "grid_checks": {
     "failures": [],

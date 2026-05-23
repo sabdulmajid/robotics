@@ -1,0 +1,17 @@
+{
+  "by_mode": {
+    "vision_language_risk_selective": {
+      "episodes": 50,
+      "mean_episode_steps": 147,
+      "success_rate": 0.0,
+      "successes": 0,
+      "terminal_labels": {
+        "abstained": 25,
+        "timeout": 25
+      },
+      "timeout_rate": 0.5,
+      "timeouts": 25
+    }
+  },
+  "episodes": 50
+}
