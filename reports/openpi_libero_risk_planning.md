@@ -457,6 +457,8 @@ The threshold gives Object utility `0.556` versus direct utility `0.548`. It giv
 
 The cross-suite calibration AUROC is `0.968`, while held-out AUROC is `0.858`. ECE changes from `0.254` to `0.362`.
 
+The held-out AUROC across 30 `occlusion:0.80` episodes is only `0.335`. The aggregate AUROC therefore overstates within-condition decision quality.
+
 The full result is `reports/openpi_cross_suite_retrospective_threshold_summary.json`.
 
 ![Retrospective cross-suite threshold transfer](figures/openpi_cross_suite_retrospective.svg)

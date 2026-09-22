@@ -1127,6 +1127,65 @@
       "failure_rate_attempted": 0.03333333333333333,
       "nll": 0.9067275470023834,
       "positive_rate": 0.24444444444444444
+    },
+    "test_by_stressor": {
+      "action_noise:0.60": {
+        "auprc": 0.05,
+        "auroc": 0.3448275862068966,
+        "brier": 0.21304988027939148,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.4062124611423242,
+        "examples": 30,
+        "failure_rate_attempted": 0.03333333333333333,
+        "nll": 0.6150693519373184,
+        "positive_rate": 0.03333333333333333
+      },
+      "none:0.00": {
+        "auprc": 0.07692307692307693,
+        "auroc": 0.5862068965517241,
+        "brier": 0.17531047626021842,
+        "coverage_at_threshold": 1.0,
+        "ece": 0.3632780250057775,
+        "examples": 30,
+        "failure_rate_attempted": 0.03333333333333333,
+        "nll": 0.5348059498961305,
+        "positive_rate": 0.03333333333333333
+      },
+      "occlusion:0.80": {
+        "auprc": 0.6326678026806448,
+        "auroc": 0.335,
+        "brier": 0.32678309064231814,
+        "coverage_at_threshold": 0.0,
+        "ece": 0.3174236330427226,
+        "examples": 30,
+        "failure_rate_attempted": null,
+        "nll": 1.5703073391737015,
+        "positive_rate": 0.6666666666666666
+      }
+    },
+    "test_by_suite": {
+      "libero_goal": {
+        "auprc": 0.6288335121668455,
+        "auroc": 0.8734567901234568,
+        "brier": 0.2529406012622993,
+        "coverage_at_threshold": 0.6666666666666666,
+        "ece": 0.37326034699223803,
+        "examples": 45,
+        "failure_rate_attempted": 0.03333333333333333,
+        "nll": 1.0831823258389206,
+        "positive_rate": 0.2
+      },
+      "libero_object": {
+        "auprc": 0.7134451019066405,
+        "auroc": 0.8822115384615384,
+        "brier": 0.22382169685898606,
+        "coverage_at_threshold": 0.6666666666666666,
+        "ece": 0.35134906580164466,
+        "examples": 45,
+        "failure_rate_attempted": 0.03333333333333333,
+        "nll": 0.7302727681658463,
+        "positive_rate": 0.28888888888888886
+      }
     }
   },
   "selection": {

@@ -2,55 +2,56 @@
 <rect width="100%" height="100%" fill="white"/>
 <text x="480.0" y="34.0" font-size="19" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="600">Retrospective cross-suite threshold transfer</text>
 <text x="480.0" y="58.0" font-size="12" text-anchor="middle" fill="#4b5563" font-family="Arial, sans-serif" font-weight="400">LIBERO Object and Goal, held-out tasks 7-9, seed 5000</text>
+<text x="480.0" y="78.0" font-size="12" text-anchor="middle" fill="#4b5563" font-family="Arial, sans-serif" font-weight="400">Aggregate AUROC 0.858; severe-occlusion AUROC 0.335</text>
 <line x1="85" y1="410" x2="555" y2="410" stroke="#222"/>
-<line x1="85" y1="80" x2="85" y2="410" stroke="#222"/>
-<line x1="85.0" y1="80" x2="85.0" y2="410" stroke="#eceff1"/>
+<line x1="85" y1="96" x2="85" y2="410" stroke="#222"/>
+<line x1="85.0" y1="96" x2="85.0" y2="410" stroke="#eceff1"/>
 <text x="85.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.5</text>
 <line x1="85" y1="410.0" x2="555" y2="410.0" stroke="#eceff1"/>
 <text x="75.0" y="414.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.00</text>
-<line x1="179.0" y1="80" x2="179.0" y2="410" stroke="#eceff1"/>
+<line x1="179.0" y1="96" x2="179.0" y2="410" stroke="#eceff1"/>
 <text x="179.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.6</text>
-<line x1="85" y1="344.0" x2="555" y2="344.0" stroke="#eceff1"/>
-<text x="75.0" y="348.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.06</text>
-<line x1="273.0" y1="80" x2="273.0" y2="410" stroke="#eceff1"/>
+<line x1="85" y1="347.2" x2="555" y2="347.2" stroke="#eceff1"/>
+<text x="75.0" y="351.2" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.06</text>
+<line x1="273.0" y1="96" x2="273.0" y2="410" stroke="#eceff1"/>
 <text x="273.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.7</text>
-<line x1="85" y1="278.0" x2="555" y2="278.0" stroke="#eceff1"/>
-<text x="75.0" y="282.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.12</text>
-<line x1="367.0" y1="80" x2="367.0" y2="410" stroke="#eceff1"/>
+<line x1="85" y1="284.4" x2="555" y2="284.4" stroke="#eceff1"/>
+<text x="75.0" y="288.4" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.12</text>
+<line x1="367.0" y1="96" x2="367.0" y2="410" stroke="#eceff1"/>
 <text x="367.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.8</text>
-<line x1="85" y1="212.0" x2="555" y2="212.0" stroke="#eceff1"/>
-<text x="75.0" y="216.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.18</text>
-<line x1="461.0" y1="80" x2="461.0" y2="410" stroke="#eceff1"/>
+<line x1="85" y1="221.6" x2="555" y2="221.6" stroke="#eceff1"/>
+<text x="75.0" y="225.6" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.18</text>
+<line x1="461.0" y1="96" x2="461.0" y2="410" stroke="#eceff1"/>
 <text x="461.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.9</text>
-<line x1="85" y1="146.0" x2="555" y2="146.0" stroke="#eceff1"/>
-<text x="75.0" y="150.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.24</text>
-<line x1="555.0" y1="80" x2="555.0" y2="410" stroke="#eceff1"/>
+<line x1="85" y1="158.8" x2="555" y2="158.8" stroke="#eceff1"/>
+<text x="75.0" y="162.8" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.24</text>
+<line x1="555.0" y1="96" x2="555.0" y2="410" stroke="#eceff1"/>
 <text x="555.0" y="432.0" font-size="11" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">1.0</text>
-<line x1="85" y1="80.0" x2="555" y2="80.0" stroke="#eceff1"/>
-<text x="75.0" y="84.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.30</text>
-<circle cx="555.0" cy="141.1" r="8" fill="#3f4a5a"/>
-<circle cx="577" cy="80.0" r="6" fill="#3f4a5a"/>
-<text x="590.0" y="84.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Direct OpenPI</text>
-<circle cx="241.7" cy="373.3" r="8" fill="#167d73"/>
-<circle cx="577" cy="102.0" r="6" fill="#167d73"/>
-<text x="590.0" y="106.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Selected 0.8711</text>
-<circle cx="377.4" cy="199.0" r="8" fill="#bf6b21"/>
-<circle cx="577" cy="124.0" r="6" fill="#bf6b21"/>
-<text x="590.0" y="128.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Spatial 0.9860</text>
-<circle cx="241.7" cy="140.7" r="8" fill="#8a8f98"/>
-<circle cx="577" cy="146.0" r="6" fill="#8a8f98"/>
-<text x="590.0" y="150.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Random abstention</text>
+<line x1="85" y1="96.0" x2="555" y2="96.0" stroke="#eceff1"/>
+<text x="75.0" y="100.0" font-size="11" text-anchor="end" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.30</text>
+<circle cx="555.0" cy="154.1" r="8" fill="#3f4a5a"/>
+<circle cx="577" cy="96.0" r="6" fill="#3f4a5a"/>
+<text x="590.0" y="100.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Direct OpenPI</text>
+<circle cx="241.7" cy="375.1" r="8" fill="#167d73"/>
+<circle cx="577" cy="118.0" r="6" fill="#167d73"/>
+<text x="590.0" y="122.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Selected 0.8711</text>
+<circle cx="377.4" cy="209.3" r="8" fill="#bf6b21"/>
+<circle cx="577" cy="140.0" r="6" fill="#bf6b21"/>
+<text x="590.0" y="144.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Spatial 0.9860</text>
+<circle cx="241.7" cy="153.7" r="8" fill="#8a8f98"/>
+<circle cx="577" cy="162.0" r="6" fill="#8a8f98"/>
+<text x="590.0" y="166.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Random abstention</text>
 <text x="320.0" y="460.0" font-size="13" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Coverage</text>
-<text x="24" y="245.0" font-size="13" text-anchor="middle" transform="rotate(-90 24 245.0)">Attempted failure rate</text>
-<text x="765.0" y="200.0" font-size="13" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="600">Expected utility</text>
-<rect x="650" y="230" width="202.7" height="22" fill="#3f4a5a"/>
-<text x="650.0" y="223.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Direct OpenPI</text>
-<text x="859.7" y="246.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.617</text>
-<rect x="650" y="288" width="183.3" height="22" fill="#167d73"/>
-<text x="650.0" y="281.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Selected 0.8711</text>
-<text x="840.3" y="304.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.558</text>
-<rect x="650" y="346" width="173.3" height="22" fill="#bf6b21"/>
-<text x="650.0" y="339.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Spatial 0.9860</text>
-<text x="830.3" y="362.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.527</text>
-<text x="765.0" y="430.0" font-size="11" text-anchor="middle" fill="#4b5563" font-family="Arial, sans-serif" font-weight="400">Higher utility is better.</text>
+<text x="24" y="253.0" font-size="13" text-anchor="middle" transform="rotate(-90 24 253.0)">Attempted failure rate</text>
+<text x="765.0" y="216.0" font-size="13" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-weight="600">Expected utility</text>
+<rect x="650" y="246" width="202.7" height="22" fill="#3f4a5a"/>
+<text x="650.0" y="239.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Direct OpenPI</text>
+<text x="859.7" y="262.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.617</text>
+<rect x="650" y="304" width="183.3" height="22" fill="#167d73"/>
+<text x="650.0" y="297.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Selected 0.8711</text>
+<text x="840.3" y="320.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.558</text>
+<rect x="650" y="362" width="173.3" height="22" fill="#bf6b21"/>
+<text x="650.0" y="355.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">Spatial 0.9860</text>
+<text x="830.3" y="378.0" font-size="11" text-anchor="start" fill="#111827" font-family="Arial, sans-serif" font-weight="400">0.527</text>
+<text x="765.0" y="446.0" font-size="11" text-anchor="middle" fill="#4b5563" font-family="Arial, sans-serif" font-weight="400">Higher utility is better.</text>
 </svg>

@@ -114,6 +114,8 @@ def test_retrospective_analysis_keeps_task_splits_disjoint() -> None:
     assert not summary["fresh_online_deployment"]
     assert summary["held_out_test"]["selected_threshold"]["coverage"] == 0.5
     assert set(summary["held_out_test"]["per_suite"]) == {"libero_goal", "libero_object"}
+    assert set(summary["risk_metrics"]["test_by_suite"]) == {"libero_goal", "libero_object"}
+    assert summary["risk_metrics"]["test_by_stressor"]["none:0.00"]["examples"] == 6
 
 
 def test_rollout_job_supports_node_local_staging() -> None:

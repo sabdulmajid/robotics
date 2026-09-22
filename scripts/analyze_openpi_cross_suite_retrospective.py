@@ -160,6 +160,16 @@ def analyze_retrospective(
         "risk_metrics": {
             "calibration": binary_risk_metrics(calibration_labels, calibration_probs, threshold=selected_threshold),
             "test": binary_risk_metrics(test_labels, test_probs, threshold=selected_threshold),
+            "test_by_suite": grouped_risk_metrics(
+                test,
+                selected_threshold,
+                lambda pair: str(pair["key"][0]),
+            ),
+            "test_by_stressor": grouped_risk_metrics(
+                test,
+                selected_threshold,
+                lambda pair: f"{pair['key'][2]}:{float(pair['key'][3]):.2f}",
+            ),
         },
         "threshold_rows": rows,
         "selection": {
@@ -252,6 +262,21 @@ def risk_labels_and_probs(pairs: Sequence[Mapping[str, Any]]) -> tuple[list[int]
     labels = [int(bool(episode_outcome(pair["direct"])["failure"])) for pair in pairs]
     probs = [float(pair["risk"]) for pair in pairs]
     return labels, probs
+
+
+def grouped_risk_metrics(
+    pairs: Sequence[Mapping[str, Any]],
+    threshold: float,
+    key_fn: Any,
+) -> dict[str, Any]:
+    grouped: dict[str, list[Mapping[str, Any]]] = {}
+    for pair in pairs:
+        grouped.setdefault(str(key_fn(pair)), []).append(pair)
+    output = {}
+    for key, items in sorted(grouped.items()):
+        labels, probs = risk_labels_and_probs(items)
+        output[key] = binary_risk_metrics(labels, probs, threshold=threshold)
+    return output
 
 
 def answer_questions(

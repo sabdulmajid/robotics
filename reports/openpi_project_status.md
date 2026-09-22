@@ -160,6 +160,8 @@ This result identifies the present limitation: the VLM score is a strong coarse 
 
 Calibration AUROC is `0.968`; held-out AUROC is `0.858`. Calibration ECE is `0.254`; held-out ECE is `0.362`.
 
+Held-out AUROC across 30 `occlusion:0.80` episodes is `0.335`. Most aggregate discrimination comes from separating stress conditions.
+
 The full result is `reports/openpi_cross_suite_retrospective_threshold_summary.json`.
 
 ## Fresh Online Follow-Up

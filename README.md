@@ -33,6 +33,10 @@ The threshold rejects all severe-occlusion episodes.
 
 This result shows that the current VLM score acts primarily as a coarse occlusion detector.
 
+Overall test AUROC is `0.858`, but AUROC across 30 severe-occlusion episodes is only `0.335`.
+
+This stratified result shows that condition separation drives most of the aggregate discrimination.
+
 See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the evidence ledger, limits, open-source components, and next experiment.
 
 The public status documents use an [ASD-STE100-style writing guide](docs/STE_STYLE.md).

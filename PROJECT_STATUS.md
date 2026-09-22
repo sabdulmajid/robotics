@@ -121,6 +121,10 @@ Test ECE is `0.362`, compared with calibration ECE `0.254`.
 
 The shift reduces discrimination and calibration quality.
 
+Within 30 `occlusion:0.80` test episodes, AUROC is only `0.335`.
+
+Thus, the overall AUROC mainly measures separation between stress conditions.
+
 ![Cross-suite threshold result](reports/figures/openpi_cross_suite_retrospective.svg)
 
 ## Failure Analysis
@@ -131,7 +135,7 @@ It rejects all `occlusion:0.80` test episodes.
 
 Thus, the current visual score is primarily a coarse occlusion detector.
 
-It does not rank risk well within the severe-occlusion group.
+It does not rank recoverability within the severe-occlusion group.
 
 On LIBERO Object, selected-threshold utility is `0.556`.
 

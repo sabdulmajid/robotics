@@ -24,20 +24,31 @@ def write_figure(summary: Mapping[str, Any], output: Path) -> None:
     test = summary["held_out_test"]
     selected = test["selected_threshold"]
     old = test["spatial_threshold_references"]["threshold_0_9860"]["metrics"]
+    selected_threshold = float(summary["selection"]["threshold"])
+    overall_auroc = float(summary["risk_metrics"]["test"]["auroc"])
+    occlusion_auroc = float(summary["risk_metrics"]["test_by_stressor"]["occlusion:0.80"]["auroc"])
     methods = [
         ("Direct OpenPI", test["direct"], "#3f4a5a"),
-        ("Selected 0.8711", selected, "#167d73"),
+        (f"Selected {selected_threshold:.4f}", selected, "#167d73"),
         ("Spatial 0.9860", old, "#bf6b21"),
         ("Random abstention", test["random_abstain_matched_coverage"], "#8a8f98"),
     ]
     width, height = 960, 500
-    left, top, plot_w, plot_h = 85, 80, 470, 330
+    left, top, plot_w, plot_h = 85, 96, 470, 314
     utility_left, utility_w = 650, 230
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="white"/>',
         text(width / 2, 34, "Retrospective cross-suite threshold transfer", 19, "middle", weight="600"),
         text(width / 2, 58, "LIBERO Object and Goal, held-out tasks 7-9, seed 5000", 12, "middle", fill="#4b5563"),
+        text(
+            width / 2,
+            78,
+            f"Aggregate AUROC {overall_auroc:.3f}; severe-occlusion AUROC {occlusion_auroc:.3f}",
+            12,
+            "middle",
+            fill="#4b5563",
+        ),
         f'<line x1="{left}" y1="{top + plot_h}" x2="{left + plot_w}" y2="{top + plot_h}" stroke="#222"/>',
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_h}" stroke="#222"/>',
     ]
