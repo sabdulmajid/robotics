@@ -430,6 +430,43 @@ Cross-suite matched-coverage baselines:
 
 Interpretation: `0.9860334584902223` remains the best deployable threshold for `libero_spatial` by point-estimate utility, but the utility gain is still statistically fragile because its bootstrap CI crosses zero. The attempted-failure reduction is robust: both SigLIP thresholds beat direct OpenPI and random abstention at matched coverage, and the attempted-failure delta CIs exclude zero. Threshold `0.9333276460818999` should be framed as a safety mode: it gives the largest failure reduction but rejects about one third of spatial and cross-suite episodes. Cross-suite generalization holds for risk filtering, not utility: on `libero_object`/`libero_goal`, SigLIP reduces attempted failure, but direct OpenPI has higher utility because abstention costs are too high in this grid.
 
+### Retrospective Cross-Suite Threshold Transfer
+
+This diagnostic reuses the reported seed-5000 cross-suite episodes. It adds no online episodes.
+
+The analysis selects a threshold on tasks `5..6` and tests it on tasks `7..9`. It uses 60 calibration pairs and 90 test pairs.
+
+| Test mode | Coverage | Completion | Attempted failure | Utility |
+| --- | ---: | ---: | ---: | ---: |
+| Direct OpenPI | 1.000 | 0.756 | 0.244 | 0.617 |
+| Selected threshold `0.8711` | 0.667 | 0.644 | 0.033 | 0.558 |
+| Spatial threshold `0.9333` | 0.678 | 0.644 | 0.049 | 0.554 |
+| Spatial threshold `0.9860` | 0.811 | 0.656 | 0.192 | 0.527 |
+| Random abstention, matched coverage | 0.667 | 0.503 | 0.245 | 0.344 |
+| Oracle abstention, matched coverage | 0.667 | 0.667 | 0.000 | 0.591 |
+
+The selected threshold reduces attempted failure by `0.211` absolute. The paired 95% CI is `[-0.296, -0.137]`.
+
+The utility delta is `-0.059`. Its paired 95% CI is `[-0.152, 0.025]`.
+
+The selected threshold accepts all nominal and action-noise test episodes. It rejects all `occlusion:0.80` test episodes.
+
+This is the key new finding: the current frozen-SigLIP score mainly detects severe occlusion. It does not rank recoverability within severe occlusion.
+
+The threshold gives Object utility `0.556` versus direct utility `0.548`. It gives Goal utility `0.559` versus direct utility `0.686`.
+
+The cross-suite calibration AUROC is `0.968`, while held-out AUROC is `0.858`. ECE changes from `0.254` to `0.362`.
+
+The full result is `reports/openpi_cross_suite_retrospective_threshold_summary.json`.
+
+![Retrospective cross-suite threshold transfer](figures/openpi_cross_suite_retrospective.svg)
+
+### Fresh Cross-Suite Follow-Up Status
+
+Fresh calibration and deployment tools are implemented and tested. The intended protocol uses calibration tasks `0..4` and deployment tasks `5..9`.
+
+Cluster infrastructure blocked the 2026-09-22 run, so it produced zero new online episodes. The status is in `reports/openpi_cross_suite_online_followup_status.json`.
+
 ## Offline Supervisor
 
 ```json
@@ -530,6 +567,8 @@ RUNTIME_RISK_THRESHOLD_OVERRIDE=0.9333276460818999 MODE=vision_language_risk_sel
 - The deployable structured model excludes injected stressor metadata; the metadata-aware model is reported only as a diagnostic upper bound.
 - The runtime VLM result uses frozen first-frame SigLIP embeddings plus prefix statistics. It is not a finetuned VLM or learned dynamics model.
 - Runtime SigLIP supervision robustly reduces attempted-failure rate by rejecting high-risk episodes. The spatial multiseed utility point estimate is positive, but the utility delta CI crosses zero; cross-suite utility is lower than direct OpenPI under the reused spatial thresholds.
+- Retrospective cross-suite tuning still lowers utility. The selected score rejects every severe-occlusion episode instead of ranking risk within that condition.
+- The retrospective test reuses reported episodes and is not a fresh deployment claim.
 
 <!-- OPENPI_METRICS_AUDIT_START -->
 ## Metrics Audit

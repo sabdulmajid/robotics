@@ -2,7 +2,11 @@
 
 ## Goal
 
-Evaluate whether calibrated risk prediction improves the reliability/coverage tradeoff of OpenPI `pi05_libero` execution on LIBERO through selective rejection and adaptive action-horizon supervision.
+Evaluate whether observed-state risk improves OpenPI `pi05_libero` execution under controlled LIBERO distribution shift.
+
+Measure coverage, task completion, attempted failure, and utility.
+
+Do not infer utility improvement from failure reduction alone.
 
 ## Modes
 
@@ -14,6 +18,7 @@ Evaluate whether calibrated risk prediction improves the reliability/coverage tr
 | `selective_openpi` | Abstain if calibrated risk exceeds the chosen calibration threshold. |
 | `adaptive_chunk_openpi` | Shorten action horizon as risk increases; query OpenPI more frequently. |
 | `no_progress_replan` | Use no-progress windows to force short-horizon re-query/recovery when feasible. |
+| `vision_language_risk_selective` | Use frozen SigLIP and progress features for runtime rejection. |
 
 ## Current Reproduction Commands
 
@@ -27,6 +32,36 @@ python scripts/summarize_openpi_results.py --run-dir reports
 ```
 
 Add `--submit` to the collection/evaluation scripts to submit their printed `sbatch` commands.
+
+Run the current retrospective cross-suite diagnostic with:
+
+```bash
+PYTHONPATH=src python scripts/analyze_openpi_cross_suite_retrospective.py
+python scripts/plot_openpi_cross_suite_retrospective.py
+```
+
+## Fresh Cross-Suite Protocol
+
+Use `libero_object` and `libero_goal`.
+
+Use tasks `0..4` and seed `7500` for threshold calibration.
+
+Use tasks `5..9` and seed `8000` for held-out deployment.
+
+Use `none:0.0`, `occlusion:0.8`, and `action_noise:0.6`.
+
+Compare direct OpenPI, spatial threshold `0.9860`, and the frozen cross-suite threshold.
+
+Select the threshold before the deployment jobs start.
+
+The prepared tools are:
+
+- `scripts/calibrate_openpi_cross_suite_threshold.py`
+- `scripts/summarize_openpi_calibrated_cross_suite.py`
+
+The 2026-09-22 attempt produced zero episodes because cluster infrastructure blocked execution.
+
+See `reports/openpi_cross_suite_online_followup_status.json` for the exact state.
 
 ## Stress Suite
 

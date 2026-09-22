@@ -1,0 +1,58 @@
+{
+  "date": "2026-09-22",
+  "experiment": "cross_suite_threshold_calibration_and_held_out_deployment",
+  "status": "infrastructure_blocked",
+  "new_online_episodes": 0,
+  "online_result_valid": false,
+  "intended_protocol": {
+    "calibration_seed": 7500,
+    "calibration_task_ids": [0, 1, 2, 3, 4],
+    "deployment_seed": 8000,
+    "deployment_task_ids": [5, 6, 7, 8, 9],
+    "suites": ["libero_object", "libero_goal"],
+    "stress_conditions": ["none:0.0", "occlusion:0.8", "action_noise:0.6"],
+    "trials_per_task_condition": 5
+  },
+  "attempted_job_sets": [
+    {
+      "job_ids": "10536..10541",
+      "result": "dualcard nodes were unavailable; moved jobs found no project path on bigcard"
+    },
+    {
+      "job_ids": "10550..10555",
+      "result": "node-local OpenPI clone did not yet include the LIBERO submodule"
+    },
+    {
+      "job_ids": "10558..10563",
+      "result": "batch script used python instead of python3 for socket checks"
+    },
+    {
+      "job_ids": "10568..10573",
+      "result": "an interrupted node-local checkpoint download was incomplete"
+    },
+    {
+      "job_ids": "10579..10584",
+      "result": "a system Ollama service reserved almost all memory on both bigcard GPUs"
+    },
+    {
+      "job_ids": "10597..10602",
+      "result": "midcard had no project mount and insufficient local disk for the environment and checkpoint"
+    }
+  ],
+  "cluster_state": {
+    "dualcard": "both nodes down",
+    "bigcard": "node available; project mount absent; GPU memory occupied by a system service",
+    "midcard": "node available; project mount absent; 27 GB local disk was insufficient",
+    "smallcard": "both nodes down"
+  },
+  "prepared_tools": [
+    "scripts/calibrate_openpi_cross_suite_threshold.py",
+    "scripts/summarize_openpi_calibrated_cross_suite.py"
+  ],
+  "resume_conditions": [
+    "one GPU node with at least 24 GB free GPU memory",
+    "at least 40 GB writable storage for the environment and checkpoint",
+    "the repository path or a writable node-local staging path"
+  ],
+  "fallback_result": "reports/openpi_cross_suite_retrospective_threshold_summary.json"
+}

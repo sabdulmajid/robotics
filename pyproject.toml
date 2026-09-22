@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "risk-aware-skill-planning"
 version = "0.1.0"
-description = "Toy and manipulation scaffolding for calibrated risk-aware symbolic skill planning."
+description = "Runtime risk supervision for OpenPI policies on LIBERO with calibrated failure estimates."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

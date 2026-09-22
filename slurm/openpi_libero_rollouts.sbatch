@@ -13,8 +13,8 @@
 
 set -euo pipefail
 
-REPO_ROOT=/mnt/slurm_nfs/a6abdulm/robotics
-OPENPI_ROOT="${REPO_ROOT}/external/openpi"
+REPO_ROOT="${ROBOTICS_REPO_ROOT:-/mnt/slurm_nfs/a6abdulm/robotics}"
+OPENPI_ROOT="${OPENPI_ROOT_OVERRIDE:-${REPO_ROOT}/external/openpi}"
 JOB_ID="${SLURM_JOB_ID:-local}"
 PORT=$((18000 + (${SLURM_JOB_ID:-10000} % 20000)))
 SERVER_LOG="${REPO_ROOT}/outputs/openpi_libero/policy_server_${JOB_ID}.log"
@@ -112,7 +112,7 @@ for _ in $(seq 1 180); do
     tail -120 "${SERVER_LOG}" || true
     exit 1
   fi
-  if python - "${PORT}" <<'PY'
+  if python3 - "${PORT}" <<'PY'
 import socket
 import sys
 
@@ -134,7 +134,7 @@ PY
   sleep 10
 done
 
-if ! python - "${PORT}" <<'PY'
+if ! python3 - "${PORT}" <<'PY'
 import socket
 import sys
 

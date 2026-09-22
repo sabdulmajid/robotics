@@ -62,6 +62,21 @@
       "utility_gain_robust": false
     }
   },
+  "follow_on_retrospective_cross_suite": {
+    "attempted_failure_delta_ci95": [
+      -0.296,
+      -0.137
+    ],
+    "fresh_online_episodes": 0,
+    "interpretation": "Task-local threshold tuning improves filtering but does not restore held-out utility.",
+    "path": "reports/openpi_cross_suite_retrospective_threshold_summary.json",
+    "selected_threshold": 0.8710960995321521,
+    "test_pairs": 90,
+    "utility_delta_ci95": [
+      -0.152,
+      0.025
+    ]
+  },
   "fresh_controlled_episodes": 500,
   "grid_checks": {
     "failures": [],

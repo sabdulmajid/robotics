@@ -1,6 +1,6 @@
 # OpenPI Risk-Aware Execution Project Status
 
-Date: 2026-05-23
+Date: 2026-09-22
 
 ## Current Claim
 
@@ -16,6 +16,7 @@ The repository now demonstrates a real OpenPI/LIBERO risk-aware execution loop:
 - A held-out runtime grid has `630` real OpenPI/LIBERO episodes across direct OpenPI, fixed task priors, and runtime SigLIP supervision.
 - A fresh same-seed controlled deployment adds `500` online episodes across direct OpenPI, fixed task priors, and two tuned runtime SigLIP thresholds on identical tasks, stressors, and seeds.
 - A multiseed/cross-suite controlled deployment adds `1,950` online episodes across `69` SLURM jobs: three `libero_spatial` seeds plus `libero_object`/`libero_goal` cross-suite runs.
+- A task-disjoint retrospective analysis shows that cross-suite threshold tuning improves filtering but does not restore utility.
 
 The strongest honest statement is:
 
@@ -132,6 +133,47 @@ Interpretation:
 - `0.9333` should be framed as safety mode: it gives the largest attempted-failure reduction but rejects about one third of spatial episodes.
 - Cross-suite generalization holds for risk filtering, not utility. Both SigLIP thresholds reduce attempted failure on `libero_object`/`libero_goal`, but direct OpenPI retains higher utility because rejection costs outweigh the saved failures in this grid.
 
+## Retrospective Cross-Suite Threshold Test
+
+This analysis reuses the seed-5000 cross-suite deployment. It adds no online episodes and is not a fresh deployment claim.
+
+Tasks `5..6` select a threshold by calibration utility. Tasks `7..9` form a task-disjoint retrospective test.
+
+The selected threshold is `0.8710960995321521`.
+
+| Test mode | Coverage | Completion | Attempted failure | Utility |
+| --- | ---: | ---: | ---: | ---: |
+| direct OpenPI | 1.000 | 0.756 | 0.244 | 0.617 |
+| selected threshold `0.8711` | 0.667 | 0.644 | 0.033 | 0.558 |
+| spatial threshold `0.9333` | 0.678 | 0.644 | 0.049 | 0.554 |
+| spatial threshold `0.9860` | 0.811 | 0.656 | 0.192 | 0.527 |
+| random abstention at matched coverage | 0.667 | 0.503 | 0.245 | 0.344 |
+| oracle abstention at matched coverage | 0.667 | 0.667 | 0.000 | 0.591 |
+
+The attempted-failure delta against direct OpenPI is `-0.211`, with 95% CI `[-0.296, -0.137]`.
+
+The utility delta is `-0.059`, with 95% CI `[-0.152, 0.025]`.
+
+The selected threshold accepts every nominal and action-noise episode. It rejects every `occlusion:0.80` episode.
+
+This result identifies the present limitation: the VLM score is a strong coarse occlusion signal, but it does not rank risk within severe occlusion.
+
+Calibration AUROC is `0.968`; held-out AUROC is `0.858`. Calibration ECE is `0.254`; held-out ECE is `0.362`.
+
+The full result is `reports/openpi_cross_suite_retrospective_threshold_summary.json`.
+
+## Fresh Online Follow-Up
+
+The code now supports separate cross-suite calibration and deployment summaries. Focused tests pass.
+
+The 2026-09-22 cluster state blocked a fresh run. The attempt produced zero new online episodes.
+
+- Both `dualcard` nodes were down.
+- The `bigcard` GPUs were occupied by a system Ollama service.
+- The `midcard` node had no project mount and insufficient local storage.
+
+The exact status is in `reports/openpi_cross_suite_online_followup_status.json`.
+
 ## Risk Critic Checkpoint
 
 Final audited dataset split:
@@ -196,6 +238,8 @@ PYTHONPATH=src python scripts/train_openpi_risk.py --config configs/openpi/train
 - Runtime supervisor evaluation and the task-disjoint runtime threshold sweep are summarized in `reports/openpi_runtime_siglip_eval_summary.json`.
 - Same-seed controlled deployment is summarized in `reports/openpi_runtime_controlled_deployment_summary.json`.
 - Multiseed and cross-suite deployment is summarized in `reports/openpi_runtime_multiseed_summary.json`.
+- Retrospective cross-suite threshold analysis is summarized in `reports/openpi_cross_suite_retrospective_threshold_summary.json`.
+- `python scripts/check_ste_docs.py` checks the public project status against mechanical ASD-STE100-style rules.
 - The global-prior AUPRC tie-handling bug is fixed and audited.
 - `python -m pytest -q` is the final repo regression check.
 
@@ -205,4 +249,6 @@ Use this phrasing:
 
 > Built a risk-aware execution layer for OpenPI robot foundation policies on LIBERO, including SLURM rollout infrastructure, stress-test generation, calibrated failure-risk prediction, frozen SigLIP image-risk models, runtime selective rejection, task-disjoint threshold tuning, adaptive replanning hooks, and coverage-aware evaluation over 993 audited offline training/evaluation rollouts plus 3,080 held-out online comparison episodes.
 
-Do not say the project has solved robot safety or improves utility robustly across suites. The professional framing is calibrated risk-aware supervision for brittle robot foundation policy execution, with robust attempted-failure reduction under controlled online stress tests.
+Do not claim formal robot safety or robust cross-suite utility gains. The professional claim is robust attempted-failure reduction under controlled online stress tests.
+
+The retrospective result adds a useful failure analysis: current SigLIP risk is too close to an all-or-none severe-occlusion detector.
